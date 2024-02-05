@@ -1,5 +1,5 @@
 from os import getenv, path, getcwd
-from flask import Flask
+from flask import Flask, render_template
 import mimetypes
 
 from server import constants
@@ -9,7 +9,11 @@ from server.mail import mail
 
 def create_app() -> Flask:
     # Create Flask object
-    app = Flask(constants.APP_NAME)
+    app = Flask(constants.APP_NAME,
+                static_url_path='/',
+                static_folder='public/static',
+                template_folder='public'
+                )
     app.secret_key = getenv('FLASK_SECRET')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///" + path.join(path.abspath(getcwd()), constants.DATABASE_PATH)
@@ -36,6 +40,6 @@ def create_app() -> Flask:
 
     @app.route("/", methods=['GET'])
     def index():
-        return "<h1>Hello world!</h1>"
+        return render_template('index.html', app_name=constants.APP_NAME)
 
     return app
