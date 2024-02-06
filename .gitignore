@@ -2,3 +2,5 @@ __pycache__
 python
 .env
 .idea
+node_modules
+public/dist

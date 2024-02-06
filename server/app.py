@@ -12,8 +12,8 @@ def create_app() -> Flask:
     # Create Flask object
     app = Flask(constants.APP_NAME,
                 static_url_path='/',
-                static_folder='public/static',
-                template_folder='public'
+                static_folder='public/dist',
+                template_folder='public/dist'
                 )
     app.secret_key = getenv('FLASK_SECRET')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -42,7 +42,7 @@ def create_app() -> Flask:
     # Serve primary webpage
     @app.route("/", methods=['GET'])
     def index():
-        return render_template('index.html', app_name=constants.APP_NAME)
+        return render_template(constants.APP_HTML_FILE, app_name=constants.APP_NAME)
 
     # Register remaining endpoints
     create_endpoints(app)
