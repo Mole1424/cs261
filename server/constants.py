@@ -6,3 +6,6 @@ FLASK_DEBUG = True
 # Application parameters
 APP_NAME = "App Name"
 DATABASE_PATH = "data/database.db"
+
+# Are we defaulting log-in to a user?
+USER_DEFAULT = None

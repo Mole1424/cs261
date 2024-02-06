@@ -1,6 +1,7 @@
 from server import constants
 from server.app import create_app
 from dotenv import load_dotenv
+from server.database import db, User
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import mimetypes
 from server import constants
 from server.database import db
 from server.mail import mail
+from server.routes import create_endpoints
 
 
 def create_app() -> Flask:
@@ -38,8 +39,12 @@ def create_app() -> Flask:
     mimetypes.add_type('text/css', '.css')
     mimetypes.add_type('image/png', '.png')
 
+    # Serve primary webpage
     @app.route("/", methods=['GET'])
     def index():
         return render_template('index.html', app_name=constants.APP_NAME)
+
+    # Register remaining endpoints
+    create_endpoints(app)
 
     return app
