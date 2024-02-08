@@ -36,42 +36,39 @@ def ensure_auth(func: Callable[[User], None]):
     return action
 
 
+def get_form_or_default(property_name: str, default: any) -> any:
+    return request.form[property_name] if property_name in request.form else default
+
+
 def create_endpoints(app: Flask) -> None:
     """Register endpoints to the given application."""
 
     @app.route('/auth/login', methods=("POST",))
     def auth_login():
-        email = str(request.form['email'])
-        password = str(request.form['password'])
-        user = db.User.get_by_email(email)
+        if is_logged_in():
+            abort(400)
 
-        # Does the user exist, and is the password correct?
+        email = str(get_form_or_default("email", ""))
+        password = str(get_form_or_default("password", ""))
+        user = User.get_by_email(email)
+
         if user is not None and user.validate(password):
             session[USER_ID] = user.id
-            return "OK", 200  # HTTP 200 OK
+            return jsonify(user.to_dict()), 200  # HTTP 200 OK
 
         abort(401)  # HTTP 401 Unauthorised
-
-    @app.route('/auth/check', methods=("GET", "POST"))
-    def auth_check():
-        """DEBUG: check if logged in."""
-        if is_logged_in():
-            return "OK", 200
-        else:
-            abort(401)
 
     @app.route('/auth/get', methods=("GET", "POST"))
     @ensure_auth
     def auth_get(user: User):
         """Get the current user."""
-        return jsonify({
-            "id": user.id,
-            "name": user.name,
-            "email": user.email,
-            "opt_email": user.opt_email
-        }), 200
+        return jsonify(user.to_dict()), 200
 
     @app.route('/auth/logout', methods=("GET", "POST"))
     @ensure_auth
     def auth_logout(_user: User):
-        del session[USER_ID]
+        # This should ALWAYS be the case, but just to make sure we don't error
+        if USER_ID in session:
+            del session[USER_ID]
+
+        return "", 200

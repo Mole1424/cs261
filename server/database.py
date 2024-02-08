@@ -37,6 +37,15 @@ class User(db.Model):
         """Return list of notifications for this user."""
         pass
 
+    def to_dict(self) -> dict:
+        """Return object information to send to front-end."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "optEmail": self.opt_email
+        }
+
     def __repr__(self) -> str:
         return f"<db.User id={self.id}>"
 

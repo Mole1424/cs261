@@ -22,6 +22,7 @@ module.exports = function(_env, argv) {
       extensions: [".js", ".jsx", ".ts", ".tsx", ".scss", ".css"],
       modules: [
           path.resolve(__dirname, "public/src"),
+          path.resolve(__dirname, "public/"),
           path.resolve(__dirname, "node_modules")
       ]
     },
@@ -72,9 +73,6 @@ module.exports = function(_env, argv) {
           terserOptions: {
             compress: {
               comparisons: false
-            },
-            mangle: {
-              safari10: true
             },
             output: {
               comments: false
