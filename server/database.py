@@ -11,19 +11,10 @@ db = SQLAlchemy()
 class User(UserMixin, db.Model):
     __tablename__ = "User"
 
-    # UserID: int
     id = db.Column(db.Integer, primary_key=True)
-
-    # Email: string
     email = db.Column(db.String, unique=True)
-
-    # Name: string
     name = db.Column(db.String)
-
-    # Password(Hash): string
     password = db.Column(db.String)
-
-    # OptEmail: boolean (has user opted into emails?)
     opt_email = db.Column(db.Boolean, default=False)
 
     def set_password(self, password: str) -> None:
