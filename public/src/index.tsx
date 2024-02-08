@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import Login from "./components/Login";
+import {getCurrentUserData} from "./components/Login";
 
 // Load APP_NAME
 export const APP_NAME: string = (window as any).APP_NAME;
@@ -16,7 +16,7 @@ const root = createRoot(container);
 // Prepare and render application
 (async function () {
   // Check if a user is already signed in
-  const userData = await Login.getCurrentUserData();
+  const userData = await getCurrentUserData();
 
   root.render(
     <StrictMode>

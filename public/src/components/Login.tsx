@@ -1,9 +1,10 @@
 import {IUserData} from "../interfaces/IUserData";
-import React from "react";
+import {useState} from "react";
 import axios, {AxiosResponse} from "axios";
 import {headerFormData} from "../constants";
-import "styles/login.scss"
 import ErrorCard from "./ErrorCard";
+
+import "styles/login.scss"
 
 interface ILoginProps {
   onLoginSuccess: (user: IUserData) => void,
@@ -13,83 +14,79 @@ interface ILoginState {
   errorMessage: string | null;
 }
 
-export default class Login extends React.Component<ILoginProps, ILoginState> {
-  private inputtedEmail = "";
-  private inputtedPassword = "";
+export default function Login(props: ILoginProps) {
+  let inputtedEmail = "";
+  let inputtedPassword = "";
 
-  constructor(props: ILoginProps) {
-    super(props);
-    this.state = {
-      errorMessage: ""
-    };
-  }
+  const [state, setState] = useState<ILoginState>({
+    errorMessage: ""
+  });
 
-  private async onClickLogin() {
-    const response = await Login.requestLogin(this.inputtedEmail, this.inputtedPassword);
+  /** Click the 'Log In' button */
+  const onClickLogin = async () => {
+    const response = await requestLogin(inputtedEmail, inputtedPassword);
 
     if (response === null) {
       // Login failure.
-      this.setState({ errorMessage: "Incorrect email or password." });
+      setState({ errorMessage: "Incorrect email or password." });
     } else {
       // Login success.
-      this.props.onLoginSuccess(response);
+      props.onLoginSuccess(response);
     }
   }
 
-  public render() {
-    return (
-      <main className="login">
-        <div>
-          { this.state.errorMessage ? <ErrorCard messages={["Incorrect email or password."]} /> : "" }
+  return (
+    <main className="login">
+      <div>
+        { state.errorMessage ? <ErrorCard messages={[state.errorMessage]} /> : "" }
 
-          <input type="email" placeholder="Email" onChange={e => {
-            this.inputtedEmail = e.target.value.trim();
-          }} />
+        <input type="email" placeholder="Email" onChange={e => {
+          inputtedEmail = e.target.value.trim();
+        }} />
 
-          <input type="password" placeholder="Password" onChange={e => {
-            this.inputtedPassword = e.target.value.trim();
-          }} />
+        <input type="password" placeholder="Password" onChange={e => {
+          inputtedPassword = e.target.value.trim();
+        }} />
 
-          <button onClick={this.onClickLogin.bind(this)}>Log In</button>
-        </div>
-      </main>
-    );
+        <button onClick={onClickLogin}>Log In</button>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * Return the current logged-in user for this session, or null.
+ */
+export async function getCurrentUserData(): Promise<IUserData | null> {
+  try {
+    const response = await axios.get('/auth/get') as AxiosResponse<IUserData, unknown>;
+    return response.data;
+  } catch (e: unknown) {
+    // Error: 401 (no user)
+    return null;
   }
+}
 
-  /**
-   * Return the current logged-in user for this session, or null.
-   */
-  public static async getCurrentUserData(): Promise<IUserData | null> {
-    try {
-      const response = await axios.get('/auth/get') as AxiosResponse<IUserData, unknown>;
-      return response.data;
-    } catch (e: unknown) {
-      // Error: 401 (no user)
-      return null;
-    }
+/**
+ * Send request to log in. Return either new logged-in user, or return failure.
+ */
+export async function requestLogin(email: string, password: string): Promise<IUserData | null> {
+  try {
+    const response = await axios.post('/auth/login', { email, password }, headerFormData) as AxiosResponse<IUserData, unknown>;
+    return response.data;
+  } catch {
+    return null;
   }
+}
 
-  /**
-   * Send request to log in. Return either new logged-in user, or return failure.
-   */
-  public static async requestLogin(email: string, password: string): Promise<IUserData | null> {
-    try {
-      const response = await axios.post('/auth/login', { email, password }, headerFormData) as AxiosResponse<IUserData, unknown>;
-      return response.data;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Send request to log the user out, return success.
-   */
-  public static async requestLogout(): Promise<boolean> {
-    try {
-      await axios.get('/auth/logout');
-      return true;
-    } catch {
-      return false;
-    }
+/**
+ * Send request to log the user out, return success.
+ */
+export async function requestLogout(): Promise<boolean> {
+  try {
+    await axios.get('/auth/logout');
+    return true;
+  } catch {
+    return false;
   }
 }
