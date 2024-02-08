@@ -1,7 +1,8 @@
 from __future__ import annotations
 from flask_sqlalchemy import SQLAlchemy
-from flask-login import UserMixin
+from flask_login import UserMixin
 import werkzeug.security
+from sqlalchemy.dialects.postgresql import ARRAY
 
 
 # Create database
@@ -35,7 +36,7 @@ class User(UserMixin, db.Model):
             "id": self.id,
             "name": self.name,
             "email": self.email,
-            "optEmail": self.opt_email
+            "optEmail": self.opt_email,
         }
 
     def __repr__(self) -> str:
@@ -54,10 +55,13 @@ class User(UserMixin, db.Model):
     @staticmethod
     def create(email: str, name: str, password: str, opt_email=False) -> User:
         """Create a new user. Assume email is unique. Password will be hashed."""
-        return User(email=email,
-                    name=name,
-                    password=werkzeug.security.generate_password_hash(password),
-                    opt_email=opt_email)
+        return User(
+            email=email,
+            name=name,
+            password=werkzeug.security.generate_password_hash(password),
+            opt_email=opt_email,
+        )
+
 
 class Notification(db.Model):
     __tablename__ = "Notification"
@@ -67,11 +71,15 @@ class Notification(db.Model):
     TargetType = db.Column(db.Integer)
     message = db.Column(db.String)
 
+
 class UserNotification(db.Model):
     __tablename__ = "UserNotification"
 
-    UserID = db.Column(db.Integer, db.ForeignKey('User.id'), primary_key=True)
-    NotificationID = db.Column(db.Integer, db.ForeignKey('Notification.id'), primary_key=True)
+    UserID = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
+    NotificationID = db.Column(
+        db.Integer, db.ForeignKey("Notification.id"), primary_key=True
+    )
+
 
 class Sector(db.Model):
     __tablename__ = "Sector"
@@ -79,11 +87,13 @@ class Sector(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
+
 class UserSector(db.Model):
     __tablename__ = "UserSector"
 
-    UserID = db.Column(db.Integer, db.ForeignKey('User.id'), primary_key=True)
-    SectorID = db.Column(db.Integer, db.ForeignKey('Sector.id'), primary_key=True)
+    UserID = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
+    SectorID = db.Column(db.Integer, db.ForeignKey("Sector.id"), primary_key=True)
+
 
 class Company(db.Model):
     __tablename__ = "Company"
@@ -93,31 +103,34 @@ class Company(db.Model):
     url = db.Column(db.String)
     description = db.Column(db.String)
     location = db.Column(db.String)
-    sectorID = db.Column(db.Integer, db.ForeignKey('Sector.id'))
+    sectorID = db.Column(db.Integer, db.ForeignKey("Sector.id"))
     marketCap = db.Column(db.Integer)
     ceo = db.Column(db.String)
-    sentiment = db.Column(db.Decimal)
+    sentiment = db.Column(db.Float)
     lastScraped = db.Column(db.DateTime)
+
 
 class Stock(db.Model):
     __tablename__ = "Stock"
 
     symbol = db.Column(db.String, primary_key=True)
-    companyID = db.Column(db.Integer, db.ForeignKey('Company.id'))
+    companyID = db.Column(db.Integer, db.ForeignKey("Company.id"))
     exchange = db.Column(db.String)
     marketCap = db.Column(db.Integer)
-    stockPrice = db.Column(db.Decimal)
-    stockChange = db.Column(db.Decimal)
-    stockDay = db.Column(db.Array(db.Decimal))
-    stockWeek = db.Column(db.Array(db.Decimal))
-    stockMonth = db.Column(db.Array(db.Decimal))
-    stockYear = db.Column(db.Array(db.Decimal))
+    stockPrice = db.Column(db.Float)
+    stockChange = db.Column(db.Float)
+    stockDay = db.Column(db.String)
+    stockWeek = db.Column(db.String)
+    stockMonth = db.Column(db.String)
+    stockYear = db.Column(db.String)
+
 
 class UserCompany(db.Model):
     __tablename__ = "UserCompany"
 
-    UserID = db.Column(db.Integer, db.ForeignKey('User.id'), primary_key=True)
-    CompanyID = db.Column(db.Integer, db.ForeignKey('Company.id'), primary_key=True)
+    UserID = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
+    CompanyID = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
+
 
 class Article(db.Model):
     __tablename__ = "Article"
@@ -128,30 +141,34 @@ class Article(db.Model):
     publisher = db.Column(db.String)
     date = db.Column(db.DateTime)
     summary = db.Column(db.String)
-    sentiment = db.Column(db.Decimal)
+    sentiment = db.Column(db.Float)
+
 
 class Story(db.Model):
     __tablename__ = "Story"
 
     id = db.Column(db.Integer, primary_key=True)
-    companyID = db.Column(db.Integer, db.ForeignKey('Company.id'))
+    companyID = db.Column(db.Integer, db.ForeignKey("Company.id"))
     title = db.Column(db.String)
-    sentiment = db.Column(db.Decimal)
+    sentiment = db.Column(db.Float)
+
 
 class StoryArticle(db.Model):
     __tablename__ = "StoryArticle"
 
-    StoryID = db.Column(db.Integer, db.ForeignKey('Story.id'), primary_key=True)
-    ArticleID = db.Column(db.Integer, db.ForeignKey('Article.id'), primary_key=True)
+    StoryID = db.Column(db.Integer, db.ForeignKey("Story.id"), primary_key=True)
+    ArticleID = db.Column(db.Integer, db.ForeignKey("Article.id"), primary_key=True)
+
 
 class ArticleCompany(db.Model):
     __tablename__ = "ArticleCompany"
 
-    ArticleID = db.Column(db.Integer, db.ForeignKey('Article.id'), primary_key=True)
-    CompanyID = db.Column(db.Integer, db.ForeignKey('Company.id'), primary_key=True)
+    ArticleID = db.Column(db.Integer, db.ForeignKey("Article.id"), primary_key=True)
+    CompanyID = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
+
 
 class StoryCompany(db.Model):
     __tablename__ = "StoryCompany"
 
-    StoryID = db.Column(db.Integer, db.ForeignKey('Story.id'), primary_key=True)
-    CompanyID = db.Column(db.Integer, db.ForeignKey('Company.id'), primary_key=True)
+    StoryID = db.Column(db.Integer, db.ForeignKey("Story.id"), primary_key=True)
+    CompanyID = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)

@@ -4,7 +4,7 @@ from typing import Callable
 from flask import Flask, request, session, abort, jsonify
 
 from server import constants
-from server.database import db, User
+from data.database import db, User
 
 
 USER_ID = "user_id"
@@ -26,6 +26,7 @@ def get_user() -> User | None:
 def ensure_auth(func: Callable[[User], None]):
     """Wrapper to ensure the user is logged in, else abort with 401. If logged in, call given function
     with the current user."""
+
     @wraps(func)
     def action():
         if is_logged_in():
@@ -43,7 +44,7 @@ def get_form_or_default(property_name: str, default: any) -> any:
 def create_endpoints(app: Flask) -> None:
     """Register endpoints to the given application."""
 
-    @app.route('/auth/login', methods=("POST",))
+    @app.route("/auth/login", methods=("POST",))
     def auth_login():
         if is_logged_in():
             abort(400)
@@ -58,13 +59,13 @@ def create_endpoints(app: Flask) -> None:
 
         abort(401)  # HTTP 401 Unauthorised
 
-    @app.route('/auth/get', methods=("GET", "POST"))
+    @app.route("/auth/get", methods=("GET", "POST"))
     @ensure_auth
     def auth_get(user: User):
         """Get the current user."""
         return jsonify(user.to_dict()), 200
 
-    @app.route('/auth/logout', methods=("GET", "POST"))
+    @app.route("/auth/logout", methods=("GET", "POST"))
     @ensure_auth
     def auth_logout(_user: User):
         # This should ALWAYS be the case, but just to make sure we don't error
