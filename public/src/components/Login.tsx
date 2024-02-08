@@ -2,7 +2,7 @@ import {IUserData} from "../interfaces/IUserData";
 import React from "react";
 import axios, {AxiosResponse} from "axios";
 import {headerFormData} from "../constants";
-import 'styles/login.scss'
+import "styles/login.scss"
 import ErrorCard from "./ErrorCard";
 
 interface ILoginProps {

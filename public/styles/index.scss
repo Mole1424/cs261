@@ -6,8 +6,15 @@ html {
 }
 
 body {
+    position: absolute;
     margin: 0;
     padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#container {
+    position: absolute;
     width: 100%;
     height: 100%;
     font-family: V.$font-family;
@@ -52,4 +59,51 @@ button:hover {
 button.btn-danger:hover {
     background-color: V.$error-bg;
     color: V.$error-fg;
+}
+
+// Page header
+header {
+    height: V.$header-height;
+    background-color: V.$secondary-bg;
+    border-bottom: 2px solid V.$secondary-fg;
+
+    // Header top section
+    > div {
+        height: 60%;
+        width: 100%;
+
+        > span {
+            height: 100%;
+        }
+
+        // App name
+        > :nth-child(1) {
+            padding-left: 10px;
+            font-size: 2em;
+            color: V.$primary-fg;
+            border-right: 1px solid V.$primary-fg;
+
+            display: flex;
+            justify-content: left;
+            align-items: center;
+
+            width: V.$filter-window-width;
+        }
+
+        // Username
+        > :nth-child(2) {
+            border-right: 1px solid V.$primary-fg;
+            margin: 10px 0;
+        }
+
+        // Bell
+        > :nth-child(3) {
+
+        }
+    }
+
+    // Tabs
+    > nav {
+        height: 40%;
+    }
 }

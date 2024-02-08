@@ -2,6 +2,7 @@ import React from 'react';
 import Login from "./components/Login";
 import {IUserData} from "./interfaces/IUserData";
 import {APP_NAME} from "./index";
+import TabGroup, {ITab} from "./components/TabGroup";
 
 export interface IAppProps {
   initialUser?: IUserData | null;
@@ -32,15 +33,62 @@ export default class App extends React.Component<IAppProps, IAppData> {
     }
   }
 
+  /** Click the user's name */
+  private clickUserName() {
+    // TODO
+    console.log("Click user's name");
+    console.log(this.state.currentUser);
+  }
+
   public render() {
     if (this.state.currentUser === null) {
       return <Login onLoginSuccess={this.setUser.bind(this)} />;
     } else {
-      return <main className="app">
-              <h1>Welcome to {APP_NAME}, {this.state.currentUser.name}!</h1>
-              <br />
-              <button onClick={this.clickLogout.bind(this)}>Log Out</button>
-            </main>;
+      const tabs: ITab[] = [
+        {
+          label: 'Following'
+        },
+        {
+          label: 'For You'
+        },
+        {
+          label: 'Recent'
+        },
+        {
+          label: 'Popular'
+        },
+        {
+          label: 'Search'
+        },
+        {
+          label: 'Logout',
+          onClick: async () => {
+            await this.clickLogout();
+            return { select: false };
+          }
+        }
+      ];
+
+      return (
+        <>
+          <header>
+            <div>
+              <span>
+                {APP_NAME}
+              </span>
+              <span onClick={this.clickUserName.bind(this)}>
+                {this.state.currentUser.name}
+              </span>
+              <span>
+                TODO: Bell
+              </span>
+            </div>
+            <TabGroup tabs={tabs} />
+          </header>
+          <h1>Welcome to {APP_NAME}, {this.state.currentUser.name}!</h1>
+          <p>This page is still under construction.</p>
+        </>
+      );
     }
   };
 }

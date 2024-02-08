@@ -3,5 +3,17 @@ $primary-bg: #212121;
 $primary-fg: #f5f5f5;
 $secondary-bg: #17375E;
 $secondary-fg: #f5f5f5;
+
 $error-bg: #FFDFD6;
 $error-fg: crimson;
+
+$header-height: max(50px, 7.5%);
+
+$tab-bg: khaki;
+$tab-fg: $primary-bg;
+$tab-hover-bg: lightpink;
+$tab-hover-fg: $tab-fg;
+$tab-selected-bg: #DEAD;
+$tab-selected-fg: $tab-fg;
+
+$filter-window-width: max(150px, 15%);

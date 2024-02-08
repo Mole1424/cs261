@@ -1,0 +1,35 @@
+@use "variables.scss" as V;
+
+.tab-group {
+  display: flex;
+  flex-direction: row;
+
+  > .tab {
+    color: V.$tab-fg;
+    border: 1px solid V.$tab-fg;
+    background-color: V.$tab-bg;
+
+    flex: 1;
+
+    // Centre the text in this tab
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &[data-selected='true'] {
+      color: V.$tab-selected-fg;
+      border-color: V.$tab-selected-fg;
+      background-color: V.$tab-selected-fg;
+    }
+
+    &:hover {
+      cursor: default;
+
+      &[data-clickable='true'] {
+        color: V.$tab-hover-fg;
+        border-color: V.$tab-hover-fg;
+        background-color: V.$tab-hover-bg;
+      }
+    }
+  }
+}
