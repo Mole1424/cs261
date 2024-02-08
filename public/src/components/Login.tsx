@@ -59,7 +59,7 @@ export default function Login(props: ILoginProps) {
  */
 export async function getCurrentUserData(): Promise<IUserData | null> {
   try {
-    const response = await axios.get('/auth/get') as AxiosResponse<IUserData, unknown>;
+    const response = await axios.get('/user') as AxiosResponse<IUserData, unknown>;
     return response.data;
   } catch (e: unknown) {
     // Error: 401 (no user)

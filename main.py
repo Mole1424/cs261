@@ -3,12 +3,9 @@ from server import constants
 from server.app import create_app
 from dotenv import load_dotenv
 
-from server.database import User, db
-
 if __name__ == "__main__":
     options = argv[1:]
 
-    # Load .env file into environment
     # Load .env file into environment
     load_dotenv()
 

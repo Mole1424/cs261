@@ -49,22 +49,16 @@ module.exports = function(_env, argv) {
           ]
         },
         {
-          test: /\.(png|jpg|gif|ico)$/i,
-          use: {
-            loader: "url-loader",
-            options: {
-              limit: 8192,
-              name: "static/media/[name].[hash:8].[ext]"
-            }
-          }
-         }
+          test: /\.(png|jpe?g|svg|gif)$/,
+          type: "asset/resource",
+        }
       ]
     },
     plugins: [
       new HtmlWebpackPlugin({
         template: path.resolve(__dirname, "public/index.html"),
         inject: true,
-        favicon: "public/favicon.ico"
+        favicon: "public/assets/favicon.ico"
       })
     ],
     optimization: {

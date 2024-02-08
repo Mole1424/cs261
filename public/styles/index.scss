@@ -72,33 +72,67 @@ header {
         height: 60%;
         width: 100%;
 
-        > span {
-            height: 100%;
-        }
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
 
         // App name
-        > :nth-child(1) {
-            padding-left: 10px;
-            font-size: 2em;
-            color: V.$primary-fg;
+        > div:first-child {
+            width: V.$filter-window-width;
             border-right: 1px solid V.$primary-fg;
+            color: V.$primary-fg;
+            padding-left: 5px;
+            font-size: 2em;
 
             display: flex;
             justify-content: left;
             align-items: center;
-
-            width: V.$filter-window-width;
         }
 
-        // Username
-        > :nth-child(2) {
-            border-right: 1px solid V.$primary-fg;
-            margin: 10px 0;
-        }
+        // Username/bell
+        > div:last-child {
+            display: flex;
+            margin-left: auto;
 
-        // Bell
-        > :nth-child(3) {
 
+            // Username
+            > :first-child {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                color: V.$primary-fg;
+                text-decoration: underline;
+
+                padding-right: 5px;
+                margin: 5px 0;
+                border-right: 1px solid V.$primary-fg;
+
+                &:hover {
+                    text-decoration: none;
+                    cursor: default;
+                }
+            }
+
+            // Notifications info
+            > :last-child {
+                display: flex;
+
+                // Bell icon
+                > img {
+                    color: V.$primary-fg;
+                }
+
+                // Notification count
+                > span {
+                    color: V.$primary-fg;
+                    font-size: 0.9em;
+
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+            }
         }
     }
 

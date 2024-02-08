@@ -4,7 +4,7 @@ from typing import Callable
 from flask import Flask, request, session, abort, jsonify
 
 from server import constants
-from server.database import db, User
+from data.database import User
 
 
 USER_ID = "user_id"
@@ -58,12 +58,6 @@ def create_endpoints(app: Flask) -> None:
 
         abort(401)  # HTTP 401 Unauthorised
 
-    @app.route('/auth/get', methods=("GET", "POST"))
-    @ensure_auth
-    def auth_get(user: User):
-        """Get the current user."""
-        return jsonify(user.to_dict()), 200
-
     @app.route('/auth/logout', methods=("GET", "POST"))
     @ensure_auth
     def auth_logout(_user: User):
@@ -72,3 +66,47 @@ def create_endpoints(app: Flask) -> None:
             del session[USER_ID]
 
         return "", 200
+
+    @app.route('/user', methods=("GET",))
+    @ensure_auth
+    def auth_get(user: User):
+        """Get the current user."""
+        return jsonify(user.to_dict()), 200
+
+    @app.route('/user/get-sectors', methods=("POST",))
+    @ensure_auth
+    def user_get_sectors(user: User):
+        """
+        Return JSON in the form:
+        {
+          name: string;
+          id: number;
+        }[]
+        """
+        abort(501)
+
+    @app.route('/user/update-sectors', methods=("POST",))
+    @ensure_auth
+    def user_update_sectors(user: User):
+        """
+        Accepts: string which may be converted to a list of ints called 'sectors'.
+        """
+        # sectors = get_form_or_default(request.form['sectors'], "[]")
+
+        abort(501)
+
+    @app.route('/api/recent', methods=("GET",))
+    @ensure_auth
+    def api_recent(_user: User):
+        """
+        Return JSON in the form:
+        {
+          title: string;
+          publisher: string;
+          published: string;
+          overview: string;
+          sentimentScore: number;
+          url: string;
+        }[]
+        """
+        abort(501)
