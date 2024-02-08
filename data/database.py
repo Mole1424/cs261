@@ -8,7 +8,7 @@ import werkzeug.security
 db = SQLAlchemy()
 
 
-class User(UserMixin, db.Model):
+class User(db.Model):
     __tablename__ = "User"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -28,6 +28,11 @@ class User(UserMixin, db.Model):
     def get_notifications(self) -> list:  # list[Notification]:
         """Return list of notifications for this user."""
         pass
+
+    def get_sectors(self) -> list[Sector]:
+        """Return list of sectors this user is interested in."""
+        return db.session.query(Sector).join(UserSector, Sector.id == UserSector.sector_id)\
+            .where(UserSector.user_id == self.id).all()
 
     def to_dict(self) -> dict:
         """Return object information to send to front-end."""
@@ -66,16 +71,16 @@ class Notification(db.Model):
     __tablename__ = "Notification"
 
     id = db.Column(db.Integer, primary_key=True)
-    targetID = db.Column(db.Integer)
-    TargetType = db.Column(db.Integer)
+    target_id = db.Column(db.Integer)
+    target_type = db.Column(db.Integer)
     message = db.Column(db.String)
 
 
 class UserNotification(db.Model):
     __tablename__ = "UserNotification"
 
-    UserID = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
-    NotificationID = db.Column(
+    user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
+    notification_id = db.Column(
         db.Integer, db.ForeignKey("Notification.id"), primary_key=True
     )
 
@@ -86,12 +91,18 @@ class Sector(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }
+
 
 class UserSector(db.Model):
     __tablename__ = "UserSector"
 
-    UserID = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
-    SectorID = db.Column(db.Integer, db.ForeignKey("Sector.id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
+    sector_id = db.Column(db.Integer, db.ForeignKey("Sector.id"), primary_key=True)
 
 
 class Company(db.Model):
@@ -102,33 +113,33 @@ class Company(db.Model):
     url = db.Column(db.String)
     description = db.Column(db.String)
     location = db.Column(db.String)
-    sectorID = db.Column(db.Integer, db.ForeignKey("Sector.id"))
-    marketCap = db.Column(db.Integer)
+    sector_id = db.Column(db.Integer, db.ForeignKey("Sector.id"))
+    market_cap = db.Column(db.Integer)
     ceo = db.Column(db.String)
     sentiment = db.Column(db.Float)
-    lastScraped = db.Column(db.DateTime)
+    last_scraped = db.Column(db.DateTime)
 
 
 class Stock(db.Model):
     __tablename__ = "Stock"
 
     symbol = db.Column(db.String, primary_key=True)
-    companyID = db.Column(db.Integer, db.ForeignKey("Company.id"))
+    company_id = db.Column(db.Integer, db.ForeignKey("Company.id"))
     exchange = db.Column(db.String)
-    marketCap = db.Column(db.Integer)
-    stockPrice = db.Column(db.Float)
-    stockChange = db.Column(db.Float)
-    stockDay = db.Column(db.String)
-    stockWeek = db.Column(db.String)
-    stockMonth = db.Column(db.String)
-    stockYear = db.Column(db.String)
+    market_cap = db.Column(db.Integer)
+    stock_price = db.Column(db.Float)
+    stock_change = db.Column(db.Float)
+    stock_day = db.Column(db.String)
+    stock_week = db.Column(db.String)
+    stock_month = db.Column(db.String)
+    stock_year = db.Column(db.String)
 
 
 class UserCompany(db.Model):
     __tablename__ = "UserCompany"
 
-    UserID = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
-    CompanyID = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
 
 
 class Article(db.Model):
@@ -147,7 +158,7 @@ class Story(db.Model):
     __tablename__ = "Story"
 
     id = db.Column(db.Integer, primary_key=True)
-    companyID = db.Column(db.Integer, db.ForeignKey("Company.id"))
+    company_id = db.Column(db.Integer, db.ForeignKey("Company.id"))
     title = db.Column(db.String)
     sentiment = db.Column(db.Float)
 
@@ -155,19 +166,19 @@ class Story(db.Model):
 class StoryArticle(db.Model):
     __tablename__ = "StoryArticle"
 
-    StoryID = db.Column(db.Integer, db.ForeignKey("Story.id"), primary_key=True)
-    ArticleID = db.Column(db.Integer, db.ForeignKey("Article.id"), primary_key=True)
+    story_id = db.Column(db.Integer, db.ForeignKey("Story.id"), primary_key=True)
+    article_id = db.Column(db.Integer, db.ForeignKey("Article.id"), primary_key=True)
 
 
 class ArticleCompany(db.Model):
     __tablename__ = "ArticleCompany"
 
-    ArticleID = db.Column(db.Integer, db.ForeignKey("Article.id"), primary_key=True)
-    CompanyID = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
+    article_id = db.Column(db.Integer, db.ForeignKey("Article.id"), primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
 
 
 class StoryCompany(db.Model):
     __tablename__ = "StoryCompany"
 
-    StoryID = db.Column(db.Integer, db.ForeignKey("Story.id"), primary_key=True)
-    CompanyID = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
+    stock_id = db.Column(db.Integer, db.ForeignKey("Story.id"), primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)

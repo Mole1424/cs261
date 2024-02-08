@@ -4,8 +4,7 @@ from typing import Callable
 from flask import Flask, request, session, abort, jsonify
 
 from server import constants
-from data.database import db, User
-
+from data.database import db, User, Sector
 
 USER_ID = "user_id"
 
@@ -74,17 +73,18 @@ def create_endpoints(app: Flask) -> None:
         """Get the current user."""
         return jsonify(user.to_dict()), 200
 
-    @app.route('/user/get-sectors', methods=("POST",))
+    @app.route('/user/get-sectors', methods=("GET",))
     @ensure_auth
     def user_get_sectors(user: User):
         """
-        Return JSON in the form:
+        Get the sectors the current user is interested in.
         {
           name: string;
           id: number;
         }[]
         """
-        abort(501)
+
+        return jsonify(list(map(Sector.to_dict, user.get_sectors())))
 
     @app.route('/user/update-sectors', methods=("POST",))
     @ensure_auth
