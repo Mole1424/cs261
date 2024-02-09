@@ -1,23 +1,32 @@
 import {useState} from 'react';
 import Login, {requestLogout} from "./components/Login";
-import {IUserData} from "./interfaces/IUserData";
+import {IUserData} from "./types/IUserData";
 import {APP_NAME} from "./index";
 import TabGroup, {ITab} from "./components/TabGroup";
+import {ViewComponentT} from "./types/ViewComponentT";
 
 // @ts-ignore
 import BellLogo from "assets/bell.svg";
 
 // @ts-ignore
 import RingingBellLogo from "assets/bell-ringing.svg";
+import ViewFollowing from "./components/ViewFollowing";
+import ViewForYou from "./components/ViewForYou";
+import ViewRecent from "./components/ViewRecent";
+import ViewPopular from "./components/ViewPopular";
+import ViewSearch from "./components/ViewSearch";
 
 export interface IAppProps {
   initialUser?: IUserData | null;
+  defaultViewContent?: ViewComponentT; // Default content of view
+  defaultTab?: string; // Label of the default tab
 }
 
 export interface IAppState {
   currentUser: IUserData | null;
   unreadNotificationCount: number;
   receivedNotification: boolean; // New unread notification (ringing bell icon?)
+  viewContent: ViewComponentT | null;
 }
 
 export default function App(props: IAppProps) {
@@ -25,6 +34,7 @@ export default function App(props: IAppProps) {
     currentUser: props.initialUser ?? null,
     unreadNotificationCount: 0,
     receivedNotification: false,
+    viewContent: props.defaultViewContent ?? null,
   });
 
   if (state.currentUser === null) {
@@ -54,19 +64,39 @@ export default function App(props: IAppProps) {
 
     const tabs: ITab[] = [
       {
-        label: 'Following'
+        label: 'Following',
+        onClick: async () => {
+          setState({ ...state, viewContent: ViewFollowing });
+          return { select: true };
+        }
       },
       {
-        label: 'For You'
+        label: 'For You',
+        onClick: async () => {
+          setState({ ...state, viewContent: ViewForYou });
+          return { select: true };
+        }
       },
       {
-        label: 'Recent'
+        label: 'Recent',
+        onClick: async () => {
+          setState({ ...state, viewContent: ViewRecent });
+          return { select: true };
+        }
       },
       {
-        label: 'Popular'
+        label: 'Popular',
+        onClick: async () => {
+          setState({ ...state, viewContent: ViewPopular });
+          return { select: true };
+        }
       },
       {
-        label: 'Search'
+        label: 'Search',
+        onClick: async () => {
+          setState({ ...state, viewContent: ViewSearch });
+          return { select: true };
+        }
       },
       {
         label: 'Logout',
@@ -97,10 +127,13 @@ export default function App(props: IAppProps) {
               </span>
             </div>
           </div>
-          <TabGroup tabs={tabs}/>
+          <TabGroup
+            tabs={tabs}
+            selected={props.defaultTab ? tabs.findIndex(tab => tab.label === props.defaultTab) : -1}/>
         </header>
-        <h1>Welcome to {APP_NAME}, {state.currentUser.name}!</h1>
-        <p>This page is still under construction.</p>
+        <main>
+          {state.viewContent ? state.viewContent(state.currentUser) : ""}
+        </main>
       </>
     );
   }

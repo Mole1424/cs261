@@ -73,7 +73,7 @@ def create_endpoints(app: Flask) -> None:
         """Get the current user."""
         return jsonify(user.to_dict()), 200
 
-    @app.route('/user/get-sectors', methods=("GET",))
+    @app.route('/user/sectors/get', methods=("GET",))
     @ensure_auth
     def user_get_sectors(user: User):
         """
@@ -86,19 +86,25 @@ def create_endpoints(app: Flask) -> None:
 
         return jsonify(list(map(Sector.to_dict, user.get_sectors())))
 
-    @app.route('/user/update-sectors', methods=("POST",))
+    @app.route('/user/sectors/add', methods=("POST",))
     @ensure_auth
-    def user_update_sectors(user: User):
+    def user_add_sector(user: User):
         """
-        Accepts: string which may be converted to a list of ints called 'sectors'.
+        Accepts: 'id' of sector to add to user's profile
         """
-        # sectors = get_form_or_default(request.form['sectors'], "[]")
-
         abort(501)
 
-    @app.route('/api/recent', methods=("GET",))
+    @app.route('/user/sectors/remove', methods=("POST",))
     @ensure_auth
-    def api_recent(_user: User):
+    def user_remove_sector(user: User):
+        """
+        Accepts: 'id' of sector to remove from user's profile
+        """
+        abort(501)
+
+    @app.route('/news/recent', methods=("GET",))
+    @ensure_auth
+    def news_recent(_user: User):
         """
         Return JSON in the form:
         {

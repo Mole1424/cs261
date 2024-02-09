@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import {getCurrentUserData} from "./components/Login";
+import ViewRecent from "./components/ViewRecent";
 
 // Load APP_NAME
 export const APP_NAME: string = (window as any).APP_NAME;
@@ -20,7 +21,7 @@ const root = createRoot(container);
 
   root.render(
     <StrictMode>
-        <App initialUser={userData} />
+        <App initialUser={userData} defaultTab={'Recent'} defaultViewContent={ViewRecent} />
     </StrictMode>
   );
 })();

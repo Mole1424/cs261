@@ -1,4 +1,4 @@
-import {IUserData} from "../interfaces/IUserData";
+import {IUserData} from "../types/IUserData";
 import {useState} from "react";
 import axios, {AxiosResponse} from "axios";
 import {headerFormData} from "../constants";

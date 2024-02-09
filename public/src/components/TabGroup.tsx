@@ -4,11 +4,12 @@ import "styles/tabs.scss"
 
 export interface ITabProps {
   tabs: ITab[];
+  selected?: number; // Default select?
 }
 
 export interface ITab {
   label: string;
-  onClick?: () => Promise<{
+  onClick?: () => Promise<void | {
     select: boolean;  // Whether to select the current tab
   }>;
 }
@@ -19,7 +20,7 @@ interface ITabState {
 
 export default function TabGroup(props: ITabProps) {
   const [state, setState] = useState<ITabState>({
-    selected: -1
+    selected: props.selected ?? -1
   });
 
   /** Handle the click of the tab at the given index */
@@ -30,7 +31,7 @@ export default function TabGroup(props: ITabProps) {
     if (tab.onClick) {
      const returnData = await tab.onClick();
 
-      if (returnData.select) {
+      if (returnData && returnData.select) {
         setState({ selected: index });
       }
     }
