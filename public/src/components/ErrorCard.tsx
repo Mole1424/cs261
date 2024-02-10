@@ -1,11 +1,13 @@
-export interface IErrorCardProps {
+export interface IProps {
   messages: string[];
 }
 
-export default function ErrorCard(props: IErrorCardProps) {
+export const ErrorCard = ({ messages }: IProps) => {
   return (
     <div className="error-card">
-      {props.messages.map(message => <span>{message}</span>)}
+      {messages.map(message => <span key={message}>{message}</span>)}
     </div>
   );
-}
+};
+
+export default ErrorCard;

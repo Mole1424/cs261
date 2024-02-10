@@ -1,4 +1,4 @@
-@use "variables.scss" as V;
+@use "variables" as V;
 
 html {
     width: 99vw;
@@ -31,7 +31,8 @@ body {
 
 input,
 button,
-textarea {
+textarea,
+.btn {
     background-color: V.$primary-fg;
     color: V.$primary-bg;
     outline: none;
@@ -44,21 +45,25 @@ input::placeholder {
     font-family: V.$font-family;
 }
 
-button {
+button, .btn {
     background-color: V.$secondary-bg;
     color: V.$secondary-fg;
     padding: 7px;
     border-radius: 10px;
-}
 
-button:hover {
-    cursor: default;
-    background-color: V.$primary-bg;
-}
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-button.btn-danger:hover {
-    background-color: V.$error-bg;
+    &:hover {
+        cursor: default;
+        background-color: V.$primary-bg;
+    }
+
+    &.btn-danger:hover {
+        background-color: V.$error-bg;
     color: V.$error-fg;
+    }
 }
 
 // Page header

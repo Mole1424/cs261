@@ -6,7 +6,7 @@ import ErrorCard from "./ErrorCard";
 
 import "styles/login.scss"
 
-interface ILoginProps {
+interface IProps {
   onLoginSuccess: (user: IUserData) => void,
 }
 
@@ -14,13 +14,11 @@ interface ILoginState {
   errorMessage: string | null;
 }
 
-export default function Login(props: ILoginProps) {
-  let inputtedEmail = "";
-  let inputtedPassword = "";
+export const Login = ({ onLoginSuccess }: IProps) => {
+  // Store user inputs
+  let inputtedEmail = "", inputtedPassword = "";
 
-  const [state, setState] = useState<ILoginState>({
-    errorMessage: ""
-  });
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   /** Click the 'Log In' button */
   const onClickLogin = async () => {
@@ -28,17 +26,17 @@ export default function Login(props: ILoginProps) {
 
     if (response === null) {
       // Login failure.
-      setState({ errorMessage: "Incorrect email or password." });
+      setErrorMessage("Incorrect email or password.");
     } else {
       // Login success.
-      props.onLoginSuccess(response);
+      onLoginSuccess(response);
     }
   }
 
   return (
     <main className="login">
       <div>
-        { state.errorMessage ? <ErrorCard messages={[state.errorMessage]} /> : "" }
+        { errorMessage ? <ErrorCard messages={[errorMessage]} /> : "" }
 
         <input type="email" placeholder="Email" onChange={e => {
           inputtedEmail = e.target.value.trim();
@@ -52,7 +50,9 @@ export default function Login(props: ILoginProps) {
       </div>
     </main>
   );
-}
+};
+
+export default Login;
 
 /**
  * Return the current logged-in user for this session, or null.

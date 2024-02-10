@@ -1,7 +1,15 @@
 import {IUserData} from "../types/IUserData";
 
-export default function ViewForYou(user: IUserData) {
-  return (
-    <span>For You</span>
-  )
+export interface IProps {
+  user: IUserData;
 }
+
+export const ViewForYou = ({ user }: IProps) => {
+  return (
+    <main className={'content-for-you'}>
+      <span>For You</span>
+    </main>
+  );
+};
+
+export default ViewForYou;

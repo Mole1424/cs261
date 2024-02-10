@@ -17,9 +17,15 @@ class User(db.Model):
     password = db.Column(db.String)
     opt_email = db.Column(db.Boolean, default=False)
 
-    def set_password(self, password: str) -> None:
+    def update_password(self, password: str) -> None:
         """Update this user's password."""
         self.password = werkzeug.security.generate_password_hash(password)
+        db.session.commit()
+
+    def update_name(self, new_name: str):
+        """Update the user's name"""
+        self.name = new_name
+        db.session.commit()
 
     def validate(self, password: str) -> bool:
         """Given a password, return if it is correct."""
@@ -33,6 +39,11 @@ class User(db.Model):
         """Return list of sectors this user is interested in."""
         return db.session.query(Sector).join(UserSector, Sector.id == UserSector.sector_id)\
             .where(UserSector.user_id == self.id).all()
+
+    def remove_sector(self, sector_id: int):
+        """Remove a sector from user."""
+        db.session.query(UserSector).where(UserSector.user_id == self.id, UserSector.sector_id == sector_id).delete()
+        db.session.commit()
 
     def to_dict(self) -> dict:
         """Return object information to send to front-end."""

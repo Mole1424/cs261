@@ -1,112 +1,117 @@
-import {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Login, {requestLogout} from "./components/Login";
 import {IUserData} from "./types/IUserData";
 import {APP_NAME} from "./index";
 import TabGroup, {ITab} from "./components/TabGroup";
-import {ViewComponentT} from "./types/ViewComponentT";
-
-// @ts-ignore
-import BellLogo from "assets/bell.svg";
-
-// @ts-ignore
-import RingingBellLogo from "assets/bell-ringing.svg";
 import ViewFollowing from "./components/ViewFollowing";
 import ViewForYou from "./components/ViewForYou";
 import ViewRecent from "./components/ViewRecent";
 import ViewPopular from "./components/ViewPopular";
 import ViewSearch from "./components/ViewSearch";
+import UserProfile from "./components/UserProfile";
+import NotificationBell from "./components/NotificationBell";
 
-export interface IAppProps {
-  initialUser?: IUserData | null;
-  defaultViewContent?: ViewComponentT; // Default content of view
+interface IProps {
+  initialUser?: IUserData | null,
   defaultTab?: string; // Label of the default tab
 }
 
-export interface IAppState {
-  currentUser: IUserData | null;
-  unreadNotificationCount: number;
-  receivedNotification: boolean; // New unread notification (ringing bell icon?)
-  viewContent: ViewComponentT | null;
+interface ITabConfig extends ITab {
+  content?: React.JSX.Element;
+  generateContent?: () => React.JSX.Element;
 }
 
-export default function App(props: IAppProps) {
-  const [state, setState] = useState<IAppState>({
-    currentUser: props.initialUser ?? null,
-    unreadNotificationCount: 0,
-    receivedNotification: false,
-    viewContent: props.defaultViewContent ?? null,
-  });
+export const App = ({ initialUser, defaultTab }: IProps) => {
+  const [user, setUser] = useState<IUserData | null>(initialUser ?? null);
+  const [viewContent, setViewContent] = useState<React.JSX.Element | null>(null);
 
-  if (state.currentUser === null) {
-    return <Login onLoginSuccess={user => void setState({ ...state, currentUser: user })} />;
+  if (user === null) {
+    return <Login onLoginSuccess={user => void setUser(user)} />;
   } else {
-    /** Click the 'logout' button */
-    const clickLogout = async () => {
-      if (await requestLogout()) {
-        setState({
-          ...state,
-          currentUser: null
-        });
+    const cachedComponents: { [key: string]: React.JSX.Element } = {};
+
+    /** Click the user's name */
+    const setCachedContent = (key: string, generator: () => React.JSX.Element) => {
+      if (key in cachedComponents) {
+        setViewContent(cachedComponents[key]);
+      } else {
+        const content = generator();
+        setViewContent(content);
+        cachedComponents[key] = content;
       }
     };
 
-    /** Click the user's name */
-    const clickUserName = () => {
-      // TODO
-      console.log("Click user's name");
-      console.log(state.currentUser);
-    };
 
-    const clickBellIcon = async () => {
-      // TODO
-      console.log("Click bell icon");
-    };
+    /** Load content */
+    const clickUserName = () =>
+      setCachedContent("user-profile", () =>
+        <UserProfile user={user} />
+      );
 
-    const tabs: ITab[] = [
+    const tabs: (ITab & { generateContent: () => React.JSX.Element })[] = [
       {
         label: 'Following',
-        onClick: async () => {
-          setState({ ...state, viewContent: ViewFollowing });
+        generateContent: () => <ViewFollowing user={user} />,
+        async onClick() {
+          setCachedContent(this.label, this.generateContent);
           return { select: true };
         }
       },
       {
         label: 'For You',
-        onClick: async () => {
-          setState({ ...state, viewContent: ViewForYou });
+        generateContent: () => <ViewForYou user={user} />,
+        async onClick() {
+          setCachedContent(this.label, this.generateContent);
           return { select: true };
         }
       },
       {
         label: 'Recent',
-        onClick: async () => {
-          setState({ ...state, viewContent: ViewRecent });
+        generateContent: () => <ViewRecent user={user} />,
+        async onClick() {
+          setCachedContent(this.label, this.generateContent);
           return { select: true };
         }
       },
       {
         label: 'Popular',
-        onClick: async () => {
-          setState({ ...state, viewContent: ViewPopular });
+        generateContent: () => <ViewPopular user={user} />,
+        async onClick() {
+          setCachedContent(this.label, this.generateContent);
           return { select: true };
         }
       },
       {
         label: 'Search',
-        onClick: async () => {
-          setState({ ...state, viewContent: ViewSearch });
+        generateContent: () => <ViewSearch user={user} />,
+        async onClick() {
+          setCachedContent(this.label, this.generateContent);
           return { select: true };
         }
       },
       {
         label: 'Logout',
-        onClick: async () => {
-          await clickLogout();
+        generateContent: () => <></>, // Unused
+        async onClick() {
+          if (await requestLogout()) {
+            setUser(null);
+          }
+
           return { select: false };
         }
       }
     ];
 
+    // Load default tab content?
+    useEffect(() => {
+      if (defaultTab) {
+        const tab = tabs.find(({ label }) => label === defaultTab);
+
+        if (tab) {
+          setCachedContent(tab.label, tab.generateContent);
+        }
+      }
+    }, []);
 
     return (
       <>
@@ -119,22 +124,20 @@ export default function App(props: IAppProps) {
             </div>
             <div>
               <span onClick={clickUserName}>
-                {state.currentUser.name}
+                {user.name}
               </span>
-              <span onClick={clickBellIcon}>
-                <img src={state.receivedNotification ? RingingBellLogo : BellLogo} alt="Bell Icon" title="View Notifications" />
-                {state.unreadNotificationCount === 0 ? "" : <span>{state.unreadNotificationCount}</span>}
-              </span>
+              <NotificationBell user={user} />
             </div>
           </div>
           <TabGroup
             tabs={tabs}
-            selected={props.defaultTab ? tabs.findIndex(tab => tab.label === props.defaultTab) : -1}/>
+            selected={defaultTab ? tabs.findIndex(tab => tab.label === defaultTab) : undefined}
+          />
         </header>
-        <main>
-          {state.viewContent ? state.viewContent(state.currentUser) : ""}
-        </main>
+        {viewContent}
       </>
     );
   }
-}
+};
+
+export default App;

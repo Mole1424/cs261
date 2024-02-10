@@ -73,6 +73,73 @@ def create_endpoints(app: Flask) -> None:
         """Get the current user."""
         return jsonify(user.to_dict()), 200
 
+    @app.route('/user/delete', methods=("POST",))
+    @ensure_auth
+    def user_delete(user: User):
+        """Delete the user's account."""
+        abort(501)
+        # del session[USER_ID]
+
+    @app.route('/user/change-name', methods=("POST",))
+    @ensure_auth
+    def user_change_name(user: User):
+        """Change the current user's name."""
+        new_name = str(request.form['name']).strip()
+
+        if len(new_name) == 0:
+            return jsonify({
+                "error": True,
+                "message": "A name must be provided"
+            })
+
+        user.update_name(new_name)
+
+        return jsonify({
+            "error": False,
+            "user": user.to_dict()
+        })
+
+    @app.route('/user/change-password', methods=("POST",))
+    @ensure_auth
+    def user_change_password(user: User):
+        """Params: password, new_password, repeat_new_password."""
+        old_password = str(get_form_or_default("password", "")).strip()
+        new_password = str(get_form_or_default("newPassword", "")).strip()
+        new_password_repeat = str(get_form_or_default("repeatNewPassword", "")).strip()
+
+        # Check old password is correct
+        if not user.validate(old_password):
+            return jsonify({
+                "error": True,
+                "message": "Password is incorrect"
+            })
+
+        if len(new_password) == 0:
+            return jsonify({
+                "error": True,
+                "message": "New password must be provided"
+            })
+
+        # Check new passwords are equal
+        if new_password != new_password_repeat:
+            return jsonify({
+                "error": True,
+                "message": "New passwords are not equal"
+            })
+
+        # Check that the passwords are not the same
+        if new_password == old_password:
+            return jsonify({
+                "error": True,
+                "message": "New password is the same as the old"
+            })
+
+        # TODO
+        user.update_password(new_password)
+        return jsonify({
+            "error": False
+        })
+
     @app.route('/user/sectors/get', methods=("GET",))
     @ensure_auth
     def user_get_sectors(user: User):
@@ -90,7 +157,7 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def user_add_sector(user: User):
         """
-        Accepts: 'id' of sector to add to user's profile
+        Accepts: 'id' of sector to add to user's profile. Returns { error: bool, message?: str, sector?: Sector }
         """
         abort(501)
 
@@ -100,7 +167,18 @@ def create_endpoints(app: Flask) -> None:
         """
         Accepts: 'id' of sector to remove from user's profile
         """
-        abort(501)
+        try:
+            sector_id = int(request.form['id'])
+        except ValueError:
+            abort(400)
+            return
+
+        user.remove_sector(sector_id)
+
+        return jsonify({
+            "error": False,
+            "user": user.to_dict()
+        })
 
     @app.route('/news/recent', methods=("GET",))
     @ensure_auth

@@ -1,7 +1,15 @@
 import {IUserData} from "../types/IUserData";
 
-export default function ViewFollowing(user: IUserData) {
-  return (
-    <span>Following</span>
-  )
+export interface IProps {
+  user: IUserData;
 }
+
+export const ViewFollowing = ({ user }: IProps) => {
+  return (
+    <main className={'content-following'}>
+      <span>Following</span>
+    </main>
+  );
+};
+
+export default ViewFollowing;
