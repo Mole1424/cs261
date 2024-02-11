@@ -103,15 +103,13 @@ export const App = ({ initialUser, defaultTab }: IProps) => {
     ];
 
     // Load default tab content?
-    useEffect(() => {
-      if (defaultTab) {
-        const tab = tabs.find(({ label }) => label === defaultTab);
+    if (!viewContent && defaultTab) {
+      const tab = tabs.find(({ label }) => label === defaultTab);
 
         if (tab) {
           setCachedContent(tab.label, tab.generateContent);
         }
-      }
-    }, []);
+    }
 
     return (
       <>

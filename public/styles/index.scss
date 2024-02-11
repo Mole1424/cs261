@@ -66,6 +66,16 @@ button, .btn {
     }
 }
 
+.link {
+    color: V.$primary-fg;
+    text-decoration: underline;
+
+    &:hover {
+        text-decoration: none;
+        cursor: default;
+    }
+}
+
 // Page header
 header {
     height: V.$header-height;

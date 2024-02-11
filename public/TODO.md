@@ -7,4 +7,3 @@
 - User profile page
   - Add sector
   - Test: change password
-  - Delete account

@@ -1,6 +1,6 @@
 import {IUserData} from "../types/IUserData";
 import {useState} from "react";
-import axios, {AxiosResponse} from "axios";
+import axios, {AxiosError, AxiosResponse} from "axios";
 import {headerFormData} from "../constants";
 import ErrorCard from "./ErrorCard";
 
@@ -10,19 +10,18 @@ interface IProps {
   onLoginSuccess: (user: IUserData) => void,
 }
 
-interface ILoginState {
-  errorMessage: string | null;
-}
-
 export const Login = ({ onLoginSuccess }: IProps) => {
-  // Store user inputs
-  let inputtedEmail = "", inputtedPassword = "";
-
+  const [isSigningUp, setIsSigningUp] = useState(false); // Signing up, or logging in?
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [inputtedEmail, setInputtedEmail] = useState("");
+  const [inputtedName, setInputtedName] = useState("");
+  const [inputtedPassword, setInputtedPassword] = useState("");
+  const [optEmail, setOptEmail] = useState(false);
 
   /** Click the 'Log In' button */
   const onClickLogin = async () => {
     const response = await requestLogin(inputtedEmail, inputtedPassword);
+    setInputtedPassword("");
 
     if (response === null) {
       // Login failure.
@@ -31,22 +30,51 @@ export const Login = ({ onLoginSuccess }: IProps) => {
       // Login success.
       onLoginSuccess(response);
     }
-  }
+  };
+
+  /** Click the 'Create account' button */
+  const onClickCreateAccount = async () => {
+    const response = await requestCreateAccount(inputtedName, inputtedEmail, inputtedPassword, optEmail);
+
+    if (response.error) {
+      setErrorMessage(response.message!);
+    } else {
+      onLoginSuccess(response.user!);
+    }
+  };
 
   return (
     <main className="login">
       <div>
+        <h1>{isSigningUp ? 'Sign Up' : 'Log In'}</h1>
         { errorMessage ? <ErrorCard messages={[errorMessage]} /> : "" }
 
-        <input type="email" placeholder="Email" onChange={e => {
-          inputtedEmail = e.target.value.trim();
+        {isSigningUp && <input type="text" placeholder="Display name" value={inputtedName} onChange={e => {
+          setInputtedName(e.target.value.trim());
+        }} />}
+
+        <input type="email" placeholder="Email" value={inputtedEmail} onChange={e => {
+          setInputtedEmail(e.target.value.trim());
         }} />
 
-        <input type="password" placeholder="Password" onChange={e => {
-          inputtedPassword = e.target.value.trim();
+        <input type="password" placeholder="Password" value={inputtedPassword} onChange={e => {
+          setInputtedPassword(e.target.value.trim());
         }} />
 
-        <button onClick={onClickLogin}>Log In</button>
+        {isSigningUp && <span>
+            <input type="checkbox" checked={optEmail} onChange={() => setOptEmail(!optEmail)} />
+            Opt into daily email round-up
+        </span>}
+
+        {isSigningUp
+          ? <button onClick={onClickCreateAccount}>Create Account</button>
+          : <button onClick={onClickLogin}>Log In</button>
+        }
+
+        {!isSigningUp && <p>Not got an account? <span className={'link'} onClick={() => {
+          setErrorMessage(null);
+          setIsSigningUp(true);
+        }}>Sign up</span></p>}
       </div>
     </main>
   );
@@ -88,5 +116,26 @@ export async function requestLogout(): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Send request to create an account.
+ */
+export async function requestCreateAccount(name: string, email: string, password: string, optEmail: boolean) {
+  try {
+    const response = await axios.post('/user/create', { name, email, password, optEmail, loginAfter: true }, headerFormData) as AxiosResponse<{
+      error: boolean;
+      message?: string;
+      user?: IUserData;
+      loggedIn: boolean;
+    }, unknown>;
+    return response.data;
+  } catch (e) {
+    return {
+      error: true,
+      message: `Internal error (${(e as AxiosError).request.status})`,
+      loggedIn: false
+    };
   }
 }

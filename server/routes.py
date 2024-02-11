@@ -77,8 +77,60 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def user_delete(user: User):
         """Delete the user's account."""
-        abort(501)
-        # del session[USER_ID]
+        db.session.delete(user)
+        db.session.commit()
+
+        del session[USER_ID]
+        return "", 200
+
+    @app.route('/user/create', methods=("POST",))
+    def user_create():
+        """Create a new user. Params: name, email, password."""
+        name = str(get_form_or_default("name", "")).strip()
+        email = str(get_form_or_default("email", "")).strip()
+        password = str(get_form_or_default("password", "")).strip()
+        opt_email = str(get_form_or_default("optEmail", "false")) == "true"
+        login_after = str(get_form_or_default("loginAfter", "false")) == "true"
+
+        if len(name) == 0:
+            return jsonify({
+                "error": True,
+                "message": "A name is required"
+            })
+
+        if len(email) == 0:
+            return jsonify({
+                "error": True,
+                "message": "An email is required"
+            })
+
+        if len(password) < 5:
+            return jsonify({
+                "error": True,
+                "message": "Password must consist of at least 5 characters"
+            })
+
+        # Is the email already registered?
+        if User.get_by_email(email) is not None:
+            return jsonify({
+                "error": True,
+                "message": "This email is already linked to an account"
+            })
+
+        # Create user
+        user = User.create(email, name, password, opt_email)
+        db.session.add(user)
+        db.session.commit()
+
+        # Log the user in?
+        if login_after:
+            session[USER_ID] = user.id
+
+        return jsonify({
+            "error": False,
+            "user": user.to_dict(),
+            "loggedIn": login_after
+        })
 
     @app.route('/user/change-name', methods=("POST",))
     @ensure_auth
