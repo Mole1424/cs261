@@ -6,3 +6,4 @@ node_modules
 public/dist
 server/__init__.pyc
 server/constants.pyc
+env
