@@ -1,6 +1,5 @@
 from __future__ import annotations
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin
 import werkzeug.security
 
 
@@ -16,6 +15,12 @@ class User(db.Model):
     name = db.Column(db.String)
     password = db.Column(db.String)
     opt_email = db.Column(db.Boolean, default=False)
+
+    def __innit__(self, email: str, name: str, password: str, opt_email: bool = False):
+        self.email = email
+        self.name = name
+        self.password = werkzeug.security.generate_password_hash(password)
+        self.opt_email = opt_email
 
     def update_password(self, password: str) -> None:
         """Update this user's password."""
@@ -37,12 +42,18 @@ class User(db.Model):
 
     def get_sectors(self) -> list[Sector]:
         """Return list of sectors this user is interested in."""
-        return db.session.query(Sector).join(UserSector, Sector.id == UserSector.sector_id)\
-            .where(UserSector.user_id == self.id).all()
+        return (
+            db.session.query(Sector)
+            .join(UserSector, Sector.id == UserSector.sector_id)
+            .where(UserSector.user_id == self.id)
+            .all()
+        )
 
     def remove_sector(self, sector_id: int):
         """Remove a sector from user."""
-        db.session.query(UserSector).where(UserSector.user_id == self.id, UserSector.sector_id == sector_id).delete()
+        db.session.query(UserSector).where(
+            UserSector.user_id == self.id, UserSector.sector_id == sector_id
+        ).delete()
         db.session.commit()
 
     def to_dict(self) -> dict:
@@ -57,26 +68,6 @@ class User(db.Model):
     def __repr__(self) -> str:
         return f"<db.User id={self.id}>"
 
-    @staticmethod
-    def get_by_id(user_id: int) -> User:
-        """Get a user by their ID."""
-        return db.session.query(User).where(User.id == user_id).first()
-
-    @staticmethod
-    def get_by_email(email: str) -> User:
-        """Get user by their email."""
-        return db.session.query(User).where(User.email == email).first()
-
-    @staticmethod
-    def create(email: str, name: str, password: str, opt_email=False) -> User:
-        """Create a new user. Assume email is unique. Password will be hashed."""
-        return User(
-            email=email,
-            name=name,
-            password=werkzeug.security.generate_password_hash(password),
-            opt_email=opt_email,
-        )
-
 
 class Notification(db.Model):
     __tablename__ = "Notification"
@@ -85,6 +76,20 @@ class Notification(db.Model):
     target_id = db.Column(db.Integer)
     target_type = db.Column(db.Integer)
     message = db.Column(db.String)
+
+    def __innit__(self, target_id: int, target_type: int, message: str):
+        self.target_id = target_id
+        self.target_type = target_type
+        self.message = message
+
+    def to_dict(self) -> dict:
+        """Return object information to send to front-end."""
+        return {
+            "id": self.id,
+            "targetId": self.target_id,
+            "targetType": self.target_type,
+            "message": self.message,
+        }
 
 
 class UserNotification(db.Model):
@@ -103,10 +108,7 @@ class Sector(db.Model):
     name = db.Column(db.String)
 
     def to_dict(self):
-        return {
-            "id": self.id,
-            "name": self.name
-        }
+        return {"id": self.id, "name": self.name}
 
 
 class UserSector(db.Model):
