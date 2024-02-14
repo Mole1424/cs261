@@ -1,3 +1,4 @@
+# Tabs
 - Following tab
 - For You tab
 - Recent tab
@@ -7,3 +8,7 @@
 - User profile page
   - Add sector
   - Test: change password
+
+# Other
+- News article card
+  - Display sentiment score correctly?

@@ -22,6 +22,7 @@ export const NotificationBell = ({ user }: IProps) => {
       <img
         src={receivedNotification ? RingingBellLogo : BellLogo}
         alt={'Bell icon'}
+        className={'icon'}
         title={'View notifications'}
       />
       {unreadNotificationCount === 0 ? "" : <span>{unreadNotificationCount}</span>}

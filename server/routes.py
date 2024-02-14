@@ -237,31 +237,37 @@ def create_endpoints(app: Flask) -> None:
         """
         Return JSON in the form:
         {
+          id: number;
           title: string;
           publisher: string;
           published: string;
           overview: string;
           sentimentScore: number;
+          sentimentCategory: "very bad" | "bad" | "neutral" | "good" | "very good";
           url: string;
         }[]
         """
-        # Spoof data
         return jsonify([
             {
+                "id": 1,
                 "title": "Man Eats Apple",
                 "publisher": "BBC",
-                "published": "21-05-2020 12:00",
-                "overview": "Man eats an apple, says it was the best apple he's every eaten.",
+                "published": "2020-05-21 12:00",
+                "overview": "Man eats an apple, says it was the best apple he'd ever eaten.",
                 "sentimentScore": 0.9,
-                "url": "https://www.bbc.co.uk"
+                "url": "https://www.bbc.co.uk",
+                "sentimentCategory": "very good"
             },
             {
+                "id": 2,
                 "title": "CEO Fired After Two Hours",
                 "publisher": "The Guardian",
-                "published": "19-06-2023 12:00",
+                "published": "2023-06-19 14:30",
                 "overview": "CEO so terrible he was fired after just two hours on the job.",
                 "sentimentScore": -0.66,
-                "url": "https://www.theguardian.com/uk"
+                "url": "https://www.theguardian.com/uk",
+                "sentimentCategory": "very bad"
             }
         ])
+        # Spoof data
         # abort(501)

@@ -107,13 +107,13 @@ export const UserProfile = ({ user }: IProps) => {
         <span>
           {editingName
             ? <>
-                <img src={CheckIcon} alt={'Update name'} onClick={clickUpdateDisplayName} />
+                <img src={CheckIcon} alt={'Update name'} onClick={clickUpdateDisplayName} className={'icon style-green'} />
                 <img src={CrossIcon} alt={'Revert change'} onClick={() => {
                   setUserName(user.name);
                   setEditingName(false);
-                }} />
+                }} className={'icon style-red'} />
               </>
-            : <img src={PencilIcon} alt={'Change name'} onClick={() => setEditingName(true)} />
+            : <img src={PencilIcon} alt={'Change name'} onClick={() => setEditingName(true)} className={'icon'} />
           }
         </span>
 
@@ -128,7 +128,7 @@ export const UserProfile = ({ user }: IProps) => {
               {sector.name}
             </span>
           )}
-          <img src={PlusIcon} alt={'Add new sector'} onClick={clickAddSector} />
+          <img src={PlusIcon} alt={'Add new sector'} onClick={clickAddSector} className={'icon'} />
         </span>
         <span/>
 

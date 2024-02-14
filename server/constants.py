@@ -8,4 +8,4 @@ DATABASE_PATH = "data/database.db"
 APP_HTML_FILE = "index.html"
 
 # Are we defaulting log-in to a user?
-USER_DEFAULT = None
+USER_DEFAULT = 1

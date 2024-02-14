@@ -76,6 +76,18 @@ button, .btn {
     }
 }
 
+.icon:not(.no-style) {
+    filter: V.$filter-white;
+
+    &.style-red {
+        filter: V.$filter-red;
+    }
+
+    &.style-green {
+        filter: V.$filter-green;
+    }
+}
+
 // Page header
 header {
     height: V.$header-height;
