@@ -233,8 +233,7 @@ def create_endpoints(app: Flask) -> None:
         })
 
     @app.route('/news/recent', methods=("GET",))
-    @ensure_auth
-    def news_recent(_user: User):
+    def news_recent():
         """
         Return JSON in the form:
         {
@@ -246,4 +245,23 @@ def create_endpoints(app: Flask) -> None:
           url: string;
         }[]
         """
-        abort(501)
+        # Spoof data
+        return jsonify([
+            {
+                "title": "Man Eats Apple",
+                "publisher": "BBC",
+                "published": "21-05-2020 12:00",
+                "overview": "Man eats an apple, says it was the best apple he's every eaten.",
+                "sentimentScore": 0.9,
+                "url": "https://www.bbc.co.uk"
+            },
+            {
+                "title": "CEO Fired After Two Hours",
+                "publisher": "The Guardian",
+                "published": "19-06-2023 12:00",
+                "overview": "CEO so terrible he was fired after just two hours on the job.",
+                "sentimentScore": -0.66,
+                "url": "https://www.theguardian.com/uk"
+            }
+        ])
+        # abort(501)
