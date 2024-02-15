@@ -28,9 +28,21 @@ class User(db.Model):
         self.password = werkzeug.security.generate_password_hash(password)
         db.session.commit()
 
-    def update_name(self, new_name: str):
+    def update_name(self, new_name: str) -> None:
         """Update the user's name"""
         self.name = new_name
+        db.session.commit()
+
+    def update_email(self, new_email: str) -> None:
+        """Update the user's email"""
+        if db.session.query(User).where(User.email == new_email).first() is not None:
+            raise ValueError("Email already in use")
+        self.email = new_email
+        db.session.commit()
+
+    def update_opt_email(self, opt_email: bool) -> None:
+        """Update the user's opt_email"""
+        self.opt_email = opt_email
         db.session.commit()
 
     def validate(self, password: str) -> bool:
@@ -55,16 +67,37 @@ class User(db.Model):
             .all()
         )
 
-    def remove_sector(self, sector_id: int):
+    def add_sector(self, sector_id: int) -> None:
+        """Add a sector to user."""
+        db.session.add(UserSector(user_id=self.id, sector_id=sector_id))
+        db.session.commit()
+
+    def remove_sector(self, sector_id: int) -> None:
         """Remove a sector from user."""
         db.session.query(UserSector).where(
             UserSector.user_id == self.id, UserSector.sector_id == sector_id
         ).delete()
         db.session.commit()
 
-    def add_sector(self, sector_id: int):
-        """Add a sector to user."""
-        db.session.add(UserSector(user_id=self.id, sector_id=sector_id))
+    def get_companies(self) -> list[Company]:
+        """Return list of companies this user is interested in."""
+        return (
+            db.session.query(Company)
+            .join(UserCompany, Company.id == UserCompany.company_id)
+            .where(UserCompany.user_id == self.id)
+            .all()
+        )
+
+    def add_company(self, company_id: int) -> None:
+        """Add a company to user."""
+        db.session.add(UserCompany(user_id=self.id, company_id=company_id))
+        db.session.commit()
+
+    def remove_company(self, company_id: int) -> None:
+        """Remove a company from user."""
+        db.session.query(UserCompany).where(
+            UserCompany.user_id == self.id, UserCompany.company_id == company_id
+        ).delete()
         db.session.commit()
 
     def to_dict(self) -> dict:
@@ -102,6 +135,21 @@ class Notification(db.Model):
             "message": self.message,
         }
 
+    def get_users(self) -> list[User]:
+        """Return list of users that have this notification."""
+        return (
+            db.session.query(User)
+            .join(UserNotification, User.id == UserNotification.user_id)
+            .where(UserNotification.notification_id == self.id)
+            .all()
+        )
+
+    def add_users(self, user_ids: list[int]) -> None:
+        """Add users to this notification."""
+        for user_id in user_ids:
+            db.session.add(UserNotification(user_id=user_id, notification_id=self.id))
+        db.session.commit()
+
 
 class UserNotification(db.Model):
     __tablename__ = "UserNotification"
@@ -127,6 +175,10 @@ class Sector(db.Model):
 
     def to_dict(self):
         return {"id": self.id, "name": self.name}
+
+    def get_companies(self) -> list[Company]:
+        """Return list of companies in this sector."""
+        return db.session.query(Company).where(Company.sector_id == self.id).all()
 
 
 class UserSector(db.Model):
@@ -174,6 +226,108 @@ class Company(db.Model):
         self.ceo = ceo
         self.last_scraped = last_scraped
 
+    def update_name(self, name: str) -> None:
+        """Update the name of this company."""
+        self.name = name
+        db.session.commit()
+
+    def update_url(self, url: str) -> None:
+        """Update the url of this company."""
+        self.url = url
+        db.session.commit()
+
+    def update_description(self, description: str) -> None:
+        """Update the description of this company."""
+        self.description = description
+        db.session.commit()
+
+    def update_location(self, location: str) -> None:
+        """Update the location of this company."""
+        self.location = location
+        db.session.commit()
+
+    def update_sector(self, sector_id: int) -> None:
+        """Update the sector of this company."""
+        self.sector_id = sector_id
+        db.session.commit()
+
+    def update_market_cap(self, market_cap: int) -> None:
+        """Update the market cap of this company."""
+        self.market_cap = market_cap
+        db.session.commit()
+
+    def update_ceo(self, ceo: str) -> None:
+        """Update the ceo of this company."""
+        self.ceo = ceo
+        db.session.commit()
+
+    def update_last_scraped(self, last_scraped: datetime.datetime) -> None:
+        """Update the last scraped time of this company."""
+        self.last_scraped = last_scraped
+        db.session.commit()
+
+    def update_sentiment(self, sentiment: float) -> None:
+        """Update the sentiment of this company."""
+        self.sentiment = sentiment
+        db.session.commit()
+
+    def to_dict(self) -> dict:
+        """Return object information to send to front-end."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "url": self.url,
+            "description": self.description,
+            "location": self.location,
+            "sectorId": self.sector_id,
+            "marketCap": self.market_cap,
+            "ceo": self.ceo,
+            "sentiment": self.sentiment,
+            "lastScraped": self.last_scraped,
+        }
+
+    def __repr__(self) -> str:
+        return f"<db.Company id={self.id}>"
+
+    def get_stocks(self) -> list[Stock]:
+        """Return list of stocks that have this company."""
+        return db.session.query(Stock).where(Stock.company_id == self.id).all()
+
+    def get_articles(self) -> list[Article]:
+        """Return list of articles that have this company."""
+        return (
+            db.session.query(Article)
+            .join(ArticleCompany, Article.id == ArticleCompany.article_id)
+            .where(ArticleCompany.company_id == self.id)
+            .all()
+        )
+
+    def get_stories(self) -> list[Story]:
+        """Return list of stories that have this company."""
+        return (
+            db.session.query(Story)
+            .join(StoryCompany, Story.id == StoryCompany.story_id)
+            .where(StoryCompany.company_id == self.id)
+            .all()
+        )
+
+    def get_sector(self) -> Sector:
+        """Return the sector that this company is in."""
+        return db.session.query(Sector).where(Sector.id == self.sector_id).first()
+
+    def get_users(self) -> list[User]:
+        """Return list of users that have this company."""
+        return (
+            db.session.query(User)
+            .join(UserCompany, User.id == UserCompany.user_id)
+            .where(UserCompany.company_id == self.id)
+            .all()
+        )
+
+    def get_stocks(self) -> list[Stock]:
+        """Return list of stocks that have this company."""
+        return db.session.query(Stock).where(Stock.company_id == self.id).all()
+
 
 class Stock(db.Model):
     __tablename__ = "Stock"
@@ -213,6 +367,41 @@ class Stock(db.Model):
         self.stock_month = stock_month
         self.stock_year = stock_year
 
+    def update_market_cap(self, market_cap: int) -> None:
+        """Update the market cap of this stock."""
+        self.market_cap = market_cap
+        db.session.commit()
+
+    def update_stock_price(self, stock_price: float) -> None:
+        """Update the stock price of this stock."""
+        self.stock_price = stock_price
+        db.session.commit()
+
+    def update_stock_change(self, stock_change: float) -> None:
+        """Update the stock change of this stock."""
+        self.stock_change = stock_change
+        db.session.commit()
+
+    def update_stock_day(self, stock_day: str) -> None:
+        """Update the stock day of this stock."""
+        self.stock_day = stock_day
+        db.session.commit()
+
+    def update_stock_week(self, stock_week: str) -> None:
+        """Update the stock week of this stock."""
+        self.stock_week = stock_week
+        db.session.commit()
+
+    def update_stock_month(self, stock_month: str) -> None:
+        """Update the stock month of this stock."""
+        self.stock_month = stock_month
+        db.session.commit()
+
+    def update_stock_year(self, stock_year: str) -> None:
+        """Update the stock year of this stock."""
+        self.stock_year = stock_year
+        db.session.commit()
+
 
 class UserCompany(db.Model):
     __tablename__ = "UserCompany"
@@ -250,6 +439,44 @@ class Article(db.Model):
         self.date = date
         self.summary = summary
 
+    def update_sentiment(self, sentiment: float) -> None:
+        """Update the sentiment of this article."""
+        self.sentiment = sentiment
+        db.session.commit()
+
+    def to_dict(self) -> dict:
+        """Return object information to send to front-end."""
+        return {
+            "id": self.id,
+            "url": self.url,
+            "headline": self.headline,
+            "publisher": self.publisher,
+            "date": self.date,
+            "summary": self.summary,
+            "sentiment": self.sentiment,
+        }
+
+    def __repr__(self) -> str:
+        return f"<db.Article id={self.id}>"
+
+    def get_stories(self) -> list[Story]:
+        """Return list of stories that have this article."""
+        return (
+            db.session.query(Story)
+            .join(StoryArticle, Story.id == StoryArticle.story_id)
+            .where(StoryArticle.article_id == self.id)
+            .all()
+        )
+
+    def get_companies(self) -> list[Company]:
+        """Return list of companies that have this article."""
+        return (
+            db.session.query(Company)
+            .join(ArticleCompany, Company.id == ArticleCompany.company_id)
+            .where(ArticleCompany.article_id == self.id)
+            .all()
+        )
+
 
 class Story(db.Model):
     __tablename__ = "Story"
@@ -262,6 +489,36 @@ class Story(db.Model):
     def __innit__(self, company_id: int, title: str):
         self.company_id = company_id
         self.title = title
+
+    def update_sentiment(self, sentiment: float) -> None:
+        """Update the sentiment of this story."""
+        self.sentiment = sentiment
+        db.session.commit()
+
+    def to_dict(self) -> dict:
+        """Return object information to send to front-end."""
+        return {"id": self.id, "companyId": self.company_id, "title": self.title}
+
+    def __repr__(self) -> str:
+        return f"<db.Story id={self.id}>"
+
+    def get_articles(self) -> list[Article]:
+        """Return list of articles that have this story."""
+        return (
+            db.session.query(Article)
+            .join(StoryArticle, Article.id == StoryArticle.article_id)
+            .where(StoryArticle.story_id == self.id)
+            .all()
+        )
+
+    def get_companies(self) -> list[Company]:
+        """Return list of companies that have this story."""
+        return (
+            db.session.query(Company)
+            .join(StoryCompany, Company.id == StoryCompany.company_id)
+            .where(StoryCompany.story_id == self.id)
+            .all()
+        )
 
 
 class StoryArticle(db.Model):
