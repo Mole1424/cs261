@@ -1,4 +1,6 @@
 import numpy as np
+from typing import Dict, Any
+from typing import List
 
 # Sentiment Analysis Modules
 import nltk
@@ -10,9 +12,9 @@ import numpy as np
 import pandas as pd
 from implicit.als import AlternatingLeastSquares
 from sklearn.model_selection import train_test_split
-from scipy.sparse import coo_matrix
+import scipy.sparse as sp
 
-def sentiment_label(text): 
+def sentiment_label(text) -> Dict[str, Any]: 
     """Returns a dictionary with the appropriate label and score for the text"""
     sid = SentimentIntensityAnalyzer()
     analysis = sid.polarity_scores(text)
@@ -31,7 +33,7 @@ def sentiment_label(text):
 
     return {"Score": score, "Label": label}    
 
-def recommend_soft(k, user, stocks):
+def recommend_soft(k, user, stocks) -> List[int]:
     """Given a user and several other stocks vectors recommend the top k ones based off euclidian distance"""
 
     user = np.array(user)
@@ -51,12 +53,12 @@ def recommend_hard_train(feedback):
     data = {'UserID': feedback[0], 'StockID': feedback[1], 'following': feedback[2]}
     df = pd.DataFrame(data)
 
-    sparse_data = coo_matrix((df['following'].astype(float), (df['UserID'], df['StockID'])))
+    sparse_data = sp.csr_matrix((df['following'].astype(float), (df['UserID'], df['StockID'])))
 
-    train_data, test_data = train_test_split(sparse_data, test_size=0.2, random_state=15)
+    # train_data, test_data = train_test_split(sparse_data, test_size=0.2, random_state=15)
 
     model = AlternatingLeastSquares(factors=10, regularization=0.1, iterations=50)
-    model.fit(train_data)
+    model.fit(sparse_data)
 
     # For Testing purposes
     """total_error = 0
@@ -70,7 +72,27 @@ def recommend_hard_train(feedback):
     rmse = np.sqrt(total_error / count)"""
 
     # still need to store the model
+    return model
 
     # Recommend items for a specific user
-def recommend_hard(model, feedback, k, userid):
-    return model.recommend(userid, feedback, N=k)
+def recommend_hard(model, userids, feedback, k):
+    data = {'UserID': feedback[0], 'StockID': feedback[1], 'following': feedback[2]}
+    df = pd.DataFrame(data)
+
+    sparse_data = sp.csr_matrix((df['following'].astype(float), (df['UserID'], df['StockID'])))
+    print(sparse_data)
+
+    items, scores = model.recommend(userids, sparse_data[userids])
+
+    return items[:k]
+            
+
+# example usage
+# Say user 1 follows stocks 1,2,5
+# user 2 only follows stock 3
+# user 3 follows stock 3,4
+# feedback is of the form
+# following examples recommends for user 2
+# feedback = [[1,1,1,1,1,2,2,2,2,3,3,3,3],[1,2,3,4,5,1,2,3,4,3,4,6,7],[1,1,1,1,1,1,1,1,1,1,1,1,1]] # Note the last string is always ones since only followings are taken into account
+# model = recommend_hard_train(feedback)
+# print(recommend_hard(model, 2, feedback, 3))
