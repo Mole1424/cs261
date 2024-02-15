@@ -16,7 +16,9 @@ export interface IProps {
 }
 
 export const UserProfile = ({ user }: IProps) => {
-  const [sectors, setSectors] = useState<ISector[] | undefined>();
+  const [userSectors, setUserSectors] = useState<ISector[] | undefined>();
+  const [allSectors, setAllSectors] = useState<ISector[] | undefined>();
+  const [isAddingSector, setIsAddingSector] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inputtedPassword, setInputtedPassword] = useState("");
   const [inputtedNewPassword, setInputtedNewPassword] = useState("");
@@ -25,8 +27,20 @@ export const UserProfile = ({ user }: IProps) => {
   const [editingName, setEditingName] = useState(false);
   
 
+  /** Re-load userSectors and allSectors */
+  const initialiseSectorStates = async () => {
+    const userSectors = await requestUserSectors();
+    const allSectors = await requestSectors();
+
+    // Select all sectors which the user is not following
+    const filteredSectors = allSectors.filter(s => userSectors.findIndex(us => s.id === us.id) === -1);
+
+    setUserSectors(userSectors);
+    setAllSectors(filteredSectors);
+  };
+
   // Set sectors
-  useEffect(() => void requestUserSectors().then(setSectors), []);
+  useEffect(() => void initialiseSectorStates(), []);
 
   /** Click on 'Change Password' */
   const clickChangePassword = async () => {
@@ -56,27 +70,11 @@ export const UserProfile = ({ user }: IProps) => {
   /** Click on a sector tag */
   const clickSectorTag = async (sectorIndex: number, sector: ISector) => {
     if (await requestRemoveSector(sector)) {
-      setSectors(sectors!.filter(s => s.id !== sector.id));
+      // Re-load sectors
+      await initialiseSectorStates();
     } else {
       setErrorMessage(`Unable to remove sector ${sector.name}`);
       console.log(sector);
-    }
-  };
-
-  /** Click on plus icon to add a new sector */
-  const clickAddSector = async () => {
-    // TODO actually implement
-    const idString = prompt("Enter sector ID");
-    if (idString) {
-      const id = +idString;
-      const response = await requestAddSector(id);
-
-      if (response.error) {
-        setErrorMessage(response.message ?? null);
-      } else {
-        // Add sector to list
-        setSectors(sectors!.concat([response.sector!]));
-      }
     }
   };
 
@@ -90,6 +88,19 @@ export const UserProfile = ({ user }: IProps) => {
       setUserName(response.user!.name);
       user.name = response.user!.name;
       setEditingName(false);
+    }
+  };
+
+  /** Add sector: select sector */
+  const onSelectAddSector = async (sectorId: number) => {
+    const response = await requestAddSector(sectorId);
+
+    if (response.error) {
+      setErrorMessage(response.message ?? null);
+    } else {
+      // Re-populate sector list
+      setIsAddingSector(false);
+      await initialiseSectorStates();
     }
   };
 
@@ -123,12 +134,21 @@ export const UserProfile = ({ user }: IProps) => {
 
         <span>Interested Sectors:</span>
         <span className={'section-sectors'}>
-          {sectors?.map((sector, index) =>
+          {userSectors?.map((sector, index) =>
             <span className={'sector-tag btn btn-danger'} key={sector.id} onClick={() => clickSectorTag(index, sector)}>
               {sector.name}
             </span>
           )}
-          <img src={PlusIcon} alt={'Add new sector'} onClick={clickAddSector} className={'icon'} />
+          {isAddingSector
+            ? <>
+              <select defaultValue={'_default'} onChange={e => onSelectAddSector(+e.target.value)}>
+                <option value="_default" disabled>Select One</option>
+                {allSectors && allSectors.map(({ id, name }) => <option value={id} key={id}>{name}</option>)}
+              </select>
+              <img src={CrossIcon} alt={'Cancel'} onClick={() => setIsAddingSector(false)} className={'icon style-red'} />
+            </>
+            : <img src={PlusIcon} alt={'Add new sector'} onClick={() => setIsAddingSector(true)} className={'icon'} />
+          }
         </span>
         <span/>
 
@@ -182,10 +202,7 @@ export async function requestDeleteUser(): Promise<boolean> {
 /**
  * Send request to change user's password. Return OK or error message.
  */
-export async function requestChangePassword(password: string, newPassword: string, repeatNewPassword: string): Promise<{
-  error: boolean;
-  message?: string;
-}> {
+export async function requestChangePassword(password: string, newPassword: string, repeatNewPassword: string) {
   try {
     return (await axios.post('/user/change-password', {
       password,
@@ -205,6 +222,17 @@ export async function requestChangeName(name: string) {
     return (await axios.post('/user/change-name', { name }, headerFormData) as AxiosResponse<{ error: boolean, message?: string, user?: IUserData }, unknown>).data;
   } catch (e) {
     return { error: true, message: "Internal error (" + (e as AxiosError).request.status + ")" };
+  }
+}
+
+/**
+ * Get list of all available sectors.
+ */
+export async function requestSectors() {
+  try {
+    return (await axios.get('/data/sectors') as AxiosResponse<ISector[], unknown>).data;
+  } catch {
+    return [];
   }
 }
 
