@@ -67,6 +67,11 @@ def create_endpoints(app: Flask) -> None:
 
         return "", 200
 
+    @app.route('/data/sectors', methods=("GET",))
+    def get_sectors():
+        """Return list of sectors in the database."""
+        return jsonify(list(map(Sector.to_dict, sorted(Sector.get_all(), key=lambda s: s.name))))
+
     @app.route('/user', methods=("GET",))
     @ensure_auth
     def auth_get(user: User):
@@ -203,7 +208,7 @@ def create_endpoints(app: Flask) -> None:
         }[]
         """
 
-        return jsonify(list(map(Sector.to_dict, user.get_sectors())))
+        return jsonify(list(map(Sector.to_dict, sorted(user.get_sectors(), key=lambda s: s.name))))
 
     @app.route('/user/sectors/add', methods=("POST",))
     @ensure_auth
@@ -211,7 +216,18 @@ def create_endpoints(app: Flask) -> None:
         """
         Accepts: 'id' of sector to add to user's profile. Returns { error: bool, message?: str, sector?: Sector }
         """
-        abort(501)
+        try:
+            sector_id = int(request.form['id'])
+        except ValueError:
+            abort(400)
+            return
+
+        # TODO
+
+        return jsonify({
+            "error": True,
+            "message": "Not Implemented"
+        })
 
     @app.route('/user/sectors/remove', methods=("POST",))
     @ensure_auth

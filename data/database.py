@@ -108,6 +108,11 @@ class Sector(db.Model):
             "name": self.name
         }
 
+    @staticmethod
+    def get_all() -> list[Sector]:
+        """Return list of sectors in the database."""
+        return db.session.query(Sector).all()
+
 
 class UserSector(db.Model):
     __tablename__ = "UserSector"
