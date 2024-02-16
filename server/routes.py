@@ -222,12 +222,20 @@ def create_endpoints(app: Flask) -> None:
             abort(400)
             return
 
-        # TODO
-    
+        new_sector = user.add_sector(sector_id)
+        if new_sector:
+            return jsonify({
+            "error": False,
+            "message": str(new_sector.name)
+        })
+
+
         return jsonify({
             "error": True,
-            "message": str(user.add_sector(sector_id))
+            "message": "Error adding sector"
         })
+    
+        
 
     @app.route('/user/sectors/remove', methods=("POST",))
     @ensure_auth
