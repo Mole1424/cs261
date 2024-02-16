@@ -223,10 +223,10 @@ def create_endpoints(app: Flask) -> None:
             return
 
         # TODO
-
+    
         return jsonify({
             "error": True,
-            "message": "Not Implemented"
+            "message": str(user.add_sector(sector_id))
         })
 
     @app.route('/user/sectors/remove', methods=("POST",))

@@ -45,6 +45,12 @@ class User(db.Model):
         db.session.query(UserSector).where(UserSector.user_id == self.id, UserSector.sector_id == sector_id).delete()
         db.session.commit()
 
+    def add_sector(self, sector_id: int):
+        sector_add = UserSector(user_id = self.id, sector_id = sector_id)
+        db.session.add(sector_add)
+        db.session.commit()
+        return db.session.query(UserSector).where(UserSector.sector_id == sector_id).first()
+
     def to_dict(self) -> dict:
         """Return object information to send to front-end."""
         return {
