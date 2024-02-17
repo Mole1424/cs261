@@ -46,7 +46,8 @@ class User(db.Model):
         db.session.commit()
 
     
-    def add_sector(self, sector_id: int):
+    def add_sector(self, sector_id: int) -> Sector:
+        """User follows sector, returns added row"""
         already_added = db.session.query(UserSector).where(UserSector.sector_id == sector_id, UserSector.user_id == self.id).first()
         if not already_added:
             sector_add = UserSector(user_id = self.id, sector_id = sector_id)
@@ -54,6 +55,23 @@ class User(db.Model):
             db.session.commit()
         return db.session.query(Sector).where(Sector.id == sector_id).first()
 
+    def get_companies(self) -> list[Company]:
+        """Return list of companies this user follows"""
+        return db.session.query(Company).join(UserCompany, Company.id == UserCompany.company_id)\
+            .where(UserCompany.user_id == self.id).all()
+
+    def unfollow_company(self, company_id: int):
+        """Remove a company from user follows."""
+        db.session.query(UserCompany).where(UserCompany.user_id == self.id, UserCompany.company_id == company_id).delete()
+        db.session.commit()
+    
+    def follow_company(self, company_id: int):
+        """User follows a company"""
+        already_added = db.session.query(UserCompany).where(UserCompany.company_id == company_id, UserCompany.user_id == self.id).first()
+        if not already_added:
+            company_add = UserCompany(user_id = self.id, company_id = company_id)
+            db.session.add(company_add)
+            db.session.commit()
 
     def to_dict(self) -> dict:
         """Return object information to send to front-end."""
@@ -144,6 +162,23 @@ class Company(db.Model):
     ceo = db.Column(db.String)
     sentiment = db.Column(db.Float)
     last_scraped = db.Column(db.DateTime)
+
+    def to_dict(self):
+        return{
+            "id" : self.id,
+            "name" : self.name,
+            "url" : self.url,
+            "description" : self.description,
+            "location" : self.location,
+            "sector_id" : self.sector_id,
+            "market_cap" : self.market_cap,
+            "ceo" : self.ceo,
+            "sentiment" : self.sentiment,
+            "last_scraped" : self.last_scraped
+        }
+    @staticmethod
+    def get_details(company_id : int) -> Company:
+        return db.session.query(Company).filter_by(id = company_id).first()
 
 
 class Stock(db.Model):
