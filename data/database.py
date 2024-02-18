@@ -1,7 +1,10 @@
 from __future__ import annotations
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from analysis import sentiment_label
 import werkzeug.security
+
+from flask_sqlalchemy import asc
 
 
 # Create database
@@ -139,7 +142,7 @@ class Sector(db.Model):
     @staticmethod
     def get_all() -> list[Sector]:
         """Return list of sectors in the database."""
-        return db.session.query(Sector).all()
+        return db.session.query(Sector).order_by(asc(Sector.id)).all()
 
 
 class UserSector(db.Model):
@@ -213,6 +216,12 @@ class Article(db.Model):
     date = db.Column(db.DateTime)
     summary = db.Column(db.String)
     sentiment = db.Column(db.Float)
+
+    def set_score(self):
+        """Set the sentiment score of the article"""
+        # Should probably use entire text instead
+        self.sentiment = sentiment_label(self.summary)['score']
+        db.session.commit()
 
 
 class Story(db.Model):
