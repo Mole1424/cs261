@@ -204,6 +204,8 @@ class UserCompany(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
+    # Temporary (probably)
+    distance = db.Column(db.Float)
 
 
 class Article(db.Model):
