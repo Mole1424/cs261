@@ -1,15 +1,12 @@
 from __future__ import annotations
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from analysis import sentiment_label
 import werkzeug.security
-
-from flask_sqlalchemy import asc
-
+from sqlalchemy import asc
+from analysis.analysis import sentiment_label
 
 # Create database
 db = SQLAlchemy()
-
 
 class User(db.Model):
     __tablename__ = "User"
