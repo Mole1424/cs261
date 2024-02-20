@@ -3,6 +3,9 @@ import database as db
 
 
 class Interface:
+    def __init__(self):
+        self.api = api.API()
+
     def get_user_by_id(self, user_id: int) -> db.User | None:
         """Get a user by their ID."""
         return db.db.session.query(db.User).where(db.User.id == user_id).one_or_none()
