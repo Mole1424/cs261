@@ -31,3 +31,11 @@ The general structure of the project is given below. The descriptions of notewor
 - `util/` - contains utility files (not used directly by the application).
 - `main.py` - application entry point.
 - `.env` - environment variables (this is not committed. Please ask team member's for latest version).
+
+## APIs used
+
+- [News API](https://newsapi.org/) - used to fetch news articles.
+- [Newscatcher API](https://newscatcherapi.com/) - used to fetch news articles.
+- [Alpha Vantage API](https://www.alphavantage.co/) - used to fetch stock data and news articles.
+- [FinHub API](https://finnhub.io/) - used to fetch stock data
+- [yfinance](https://pypi.org/project/yfinance/) - used to fetch stock data
