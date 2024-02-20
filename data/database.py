@@ -28,20 +28,10 @@ class User(db.Model):
         self.password = werkzeug.security.generate_password_hash(password)
         db.session.commit()
 
-    def update_name(self, new_name: str) -> None:
-        """Update the user's name"""
-        self.name = new_name
-        db.session.commit()
-
-    def update_email(self, new_email: str) -> None:
-        """Update the user's email"""
-        if db.session.query(User).where(User.email == new_email).first() is not None:
-            raise ValueError("Email already in use")
-        self.email = new_email
-        db.session.commit()
-
-    def update_opt_email(self, opt_email: bool) -> None:
-        """Update the user's opt_email"""
+    def update_user(self, name: str, email: str, opt_email: bool) -> None:
+        """Update this user's information."""
+        self.name = name
+        self.email = email
         self.opt_email = opt_email
         db.session.commit()
 
@@ -226,43 +216,25 @@ class Company(db.Model):
         self.ceo = ceo
         self.last_scraped = last_scraped
 
-    def update_name(self, name: str) -> None:
-        """Update the name of this company."""
+    def update_company(
+        self,
+        name: str,
+        url: str,
+        description: str,
+        location: str,
+        sector_id: int,
+        market_cap: int,
+        ceo: str,
+        last_scraped: datetime.datetime,
+    ) -> None:
+        """Update the company's information."""
         self.name = name
-        db.session.commit()
-
-    def update_url(self, url: str) -> None:
-        """Update the url of this company."""
         self.url = url
-        db.session.commit()
-
-    def update_description(self, description: str) -> None:
-        """Update the description of this company."""
         self.description = description
-        db.session.commit()
-
-    def update_location(self, location: str) -> None:
-        """Update the location of this company."""
         self.location = location
-        db.session.commit()
-
-    def update_sector(self, sector_id: int) -> None:
-        """Update the sector of this company."""
         self.sector_id = sector_id
-        db.session.commit()
-
-    def update_market_cap(self, market_cap: int) -> None:
-        """Update the market cap of this company."""
         self.market_cap = market_cap
-        db.session.commit()
-
-    def update_ceo(self, ceo: str) -> None:
-        """Update the ceo of this company."""
         self.ceo = ceo
-        db.session.commit()
-
-    def update_last_scraped(self, last_scraped: datetime.datetime) -> None:
-        """Update the last scraped time of this company."""
         self.last_scraped = last_scraped
         db.session.commit()
 
@@ -367,38 +339,23 @@ class Stock(db.Model):
         self.stock_month = stock_month
         self.stock_year = stock_year
 
-    def update_market_cap(self, market_cap: int) -> None:
-        """Update the market cap of this stock."""
+    def update_stock(
+        self,
+        market_cap: int,
+        stock_price: float,
+        stock_change: float,
+        stock_day: str,
+        stock_week: str,
+        stock_month: str,
+        stock_year: str,
+    ) -> None:
+        """Update the stock information."""
         self.market_cap = market_cap
-        db.session.commit()
-
-    def update_stock_price(self, stock_price: float) -> None:
-        """Update the stock price of this stock."""
         self.stock_price = stock_price
-        db.session.commit()
-
-    def update_stock_change(self, stock_change: float) -> None:
-        """Update the stock change of this stock."""
         self.stock_change = stock_change
-        db.session.commit()
-
-    def update_stock_day(self, stock_day: str) -> None:
-        """Update the stock day of this stock."""
         self.stock_day = stock_day
-        db.session.commit()
-
-    def update_stock_week(self, stock_week: str) -> None:
-        """Update the stock week of this stock."""
         self.stock_week = stock_week
-        db.session.commit()
-
-    def update_stock_month(self, stock_month: str) -> None:
-        """Update the stock month of this stock."""
         self.stock_month = stock_month
-        db.session.commit()
-
-    def update_stock_year(self, stock_year: str) -> None:
-        """Update the stock year of this stock."""
         self.stock_year = stock_year
         db.session.commit()
 
