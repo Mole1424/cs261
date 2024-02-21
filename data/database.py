@@ -433,7 +433,7 @@ class Article(db.Model):
     publisher = db.Column(db.String)
     date = db.Column(db.DateTime)
     summary = db.Column(db.String)
-    sentiment = db.Column(db.Float, deafult=0.0)
+    sentiment = db.Column(db.Float, default=0.0)
 
     def __innit__(
         self,
@@ -500,7 +500,7 @@ class Story(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"))
     title = db.Column(db.String)
-    sentiment = db.Column(db.Float, deafult=0.0)
+    sentiment = db.Column(db.Float, default=0.0)
 
     def __innit__(self, company_id: int, title: str):
         self.company_id = company_id
