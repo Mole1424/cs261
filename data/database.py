@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy import asc
 from analysis.analysis import sentiment_label
 
+
 # Create database
 db = SQLAlchemy()
 
@@ -118,6 +119,28 @@ class User(db.Model):
             db.session.add(company_add)
             db.session.commit()
 
+        # Add all sectors of the pertinent company to the usersector table if they are not there already
+        company_sectors = db.session.query(CompanySector.sector_id).where(CompanySector.company_id == company_id).all()
+        for sector in company_sectors:
+            self.add_sector(sector)
+
+    def set_distances(self):
+        non_followed = db.session.query(Company.id).outerjoin(UserCompany, (UserCompany.company_id == Company.id) & (UserCompany.user_id == self.id)).filter(UserCompany.user_id == None).all()
+        user_sectors = db.session.query(UserSector).filter(UserSector.user_id == self.id)
+
+        for company in non_followed:
+            company_sectors = db.session.query(CompanySector).filter(CompanySector.company_id == company)
+            distance = user_sectors.outerjoin(company_sectors, user_sectors.sector_id == company_sectors.sector_id).filter(user_sectors.user_id == None | company_sectors.company_id == None).count()
+
+            existing_record = db.session.query(UserCompanyd).filter_by(user_id=self.id, company_id=company).first()
+            
+            if not existing_record:
+                db.session.add(UserCompanyd(user_id=self.id, company_id=company, distance=distance))
+            else:
+                existing_record.distance = distance
+            db.session.commit()
+
+
     def to_dict(self) -> dict:
         """Return object information to send to front-end."""
         return {
@@ -214,6 +237,16 @@ class UserSector(db.Model):
         self.user_id = user_id
         self.sector_id = sector_id
 
+class CompanySector(db.Model):
+    __tablename__ = "CompanySector"
+
+    company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
+    sector_id = db.Column(db.Integer, db.ForeignKey("Sector.id"), primary_key=True)
+
+    def __innit__(self, company_id: int, sector_id: int):
+        self.company_id = company_id
+        self.sector_id = sector_id
+
 
 class Company(db.Model):
     __tablename__ = "Company"
@@ -223,7 +256,6 @@ class Company(db.Model):
     url = db.Column(db.String)
     description = db.Column(db.String)
     location = db.Column(db.String)
-    sector_id = db.Column(db.Integer, db.ForeignKey("Sector.id"))
     market_cap = db.Column(db.Integer)
     ceo = db.Column(db.String)
     sentiment = db.Column(db.Float, default=0.0)
@@ -235,7 +267,6 @@ class Company(db.Model):
         url: str,
         description: str,
         location: str,
-        sector_id: int,
         market_cap: int,
         ceo: str,
         last_scraped: datetime.datetime,
@@ -244,7 +275,6 @@ class Company(db.Model):
         self.url = url
         self.description = description
         self.location = location
-        self.sector_id = sector_id
         self.market_cap = market_cap
         self.ceo = ceo
         self.last_scraped = last_scraped
@@ -255,7 +285,6 @@ class Company(db.Model):
         url: str,
         description: str,
         location: str,
-        sector_id: int,
         market_cap: int,
         ceo: str,
         last_scraped: datetime.datetime,
@@ -265,11 +294,12 @@ class Company(db.Model):
         self.url = url
         self.description = description
         self.location = location
-        self.sector_id = sector_id
         self.market_cap = market_cap
         self.ceo = ceo
         self.last_scraped = last_scraped
         db.session.commit()
+
+        # TODO method to add all sectors to it
 
     def update_sentiment(self, sentiment: float) -> None:
         """Update the sentiment of this company."""
@@ -284,7 +314,6 @@ class Company(db.Model):
             "url": self.url,
             "description": self.description,
             "location": self.location,
-            "sectorId": self.sector_id,
             "marketCap": self.market_cap,
             "ceo": self.ceo,
             "sentiment": self.sentiment,
@@ -416,12 +445,22 @@ class UserCompany(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
-    # Temporary (probably)
-    distance = db.Column(db.Float)
 
     def __innit__(self, user_id: int, company_id: int):
         self.user_id = user_id
         self.company_id = company_id
+
+class UserCompanyd(db.Model):
+    __tablename__ = "UserCompanyd"
+
+    user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
+    distance = db.Column(db.Integer)
+
+    def __innit__(self, user_id: int, company_id: int, distance: int):
+        self.user_id = user_id
+        self.company_id = company_id
+        self.distance = distance
 
 
 class Article(db.Model):
@@ -433,7 +472,7 @@ class Article(db.Model):
     publisher = db.Column(db.String)
     date = db.Column(db.DateTime)
     summary = db.Column(db.String)
-    sentiment = db.Column(db.Float, deafult=0.0)
+    sentiment = db.Column(db.Float, default=0.0)
 
     def __innit__(
         self,
