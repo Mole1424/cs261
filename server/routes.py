@@ -5,6 +5,7 @@ from flask import Flask, request, session, abort, jsonify
 
 from server import constants
 from data.database import db, User, Sector, Company
+import data.interface as dt
 
 USER_ID = "user_id"
 
@@ -17,9 +18,9 @@ def is_logged_in() -> bool:
 def get_user() -> User | None:
     """Get the current user who is logged in."""
     if constants.USER_DEFAULT is None:
-        return User.get_by_id(session[USER_ID]) if is_logged_in() else None
+        return dt.get_user_by_id(session[USER_ID]) if is_logged_in() else None
     else:
-        return User.get_by_id(constants.USER_DEFAULT)
+        return dt.get_user_by_id(constants.USER_DEFAULT)
 
 
 def ensure_auth(func: Callable[[User], None]):
@@ -40,16 +41,15 @@ def get_form_or_default(property_name: str, default: any) -> any:
     return request.form[property_name] if property_name in request.form else default
 
 
-
 """not finalised"""
-def company_details(company_id : int) -> Company | None:
-    details = Company.get_details(company_id)
+
+
+def company_details(company_id: int) -> Company | None:
+    details = dt.get_company_by_id(company_id)
     if details:
         return list(map(Company.to_dict, details))
     else:
         return None
-
-
 
 
 def create_endpoints(app: Flask) -> None:
@@ -62,7 +62,7 @@ def create_endpoints(app: Flask) -> None:
 
         email = str(get_form_or_default("email", ""))
         password = str(get_form_or_default("password", ""))
-        user = User.get_by_email(email)
+        user = dt.get_user_by_email(email)
 
         if user is not None and user.validate(password):
             session[USER_ID] = user.id
@@ -70,7 +70,7 @@ def create_endpoints(app: Flask) -> None:
 
         abort(401)  # HTTP 401 Unauthorised
 
-    @app.route('/auth/logout', methods=("GET", "POST"))
+    @app.route("/auth/logout", methods=("GET", "POST"))
     @ensure_auth
     def auth_logout(_user: User):
         # This should ALWAYS be the case, but just to make sure we don't error
@@ -79,18 +79,22 @@ def create_endpoints(app: Flask) -> None:
 
         return "", 200
 
-    @app.route('/data/sectors', methods=("GET",))
+    @app.route("/data/sectors", methods=("GET",))
     def get_sectors():
         """Return list of sectors in the database."""
-        return jsonify(list(map(Sector.to_dict, sorted(Sector.get_all(), key=lambda s: s.name))))
+        return jsonify(
+            list(
+                map(Sector.to_dict, sorted(dt.get_all_sectors(), key=lambda s: s.name))
+            )
+        )
 
-    @app.route('/user', methods=("GET",))
+    @app.route("/user", methods=("GET",))
     @ensure_auth
     def auth_get(user: User):
         """Get the current user."""
         return jsonify(user.to_dict()), 200
 
-    @app.route('/user/delete', methods=("POST",))
+    @app.route("/user/delete", methods=("POST",))
     @ensure_auth
     def user_delete(user: User):
         """Delete the user's account."""
@@ -100,7 +104,7 @@ def create_endpoints(app: Flask) -> None:
         del session[USER_ID]
         return "", 200
 
-    @app.route('/user/create', methods=("POST",))
+    @app.route("/user/create", methods=("POST",))
     def user_create():
         """Create a new user. Params: name, email, password."""
         name = str(get_form_or_default("name", "")).strip()
@@ -110,29 +114,24 @@ def create_endpoints(app: Flask) -> None:
         login_after = str(get_form_or_default("loginAfter", "false")) == "true"
 
         if len(name) == 0:
-            return jsonify({
-                "error": True,
-                "message": "A name is required"
-            })
+            return jsonify({"error": True, "message": "A name is required"})
 
         if len(email) == 0:
-            return jsonify({
-                "error": True,
-                "message": "An email is required"
-            })
+            return jsonify({"error": True, "message": "An email is required"})
 
         if len(password) < 5:
-            return jsonify({
-                "error": True,
-                "message": "Password must consist of at least 5 characters"
-            })
+            return jsonify(
+                {
+                    "error": True,
+                    "message": "Password must consist of at least 5 characters",
+                }
+            )
 
         # Is the email already registered?
-        if User.get_by_email(email) is not None:
-            return jsonify({
-                "error": True,
-                "message": "This email is already linked to an account"
-            })
+        if dt.get_user_by_email(email) is not None:
+            return jsonify(
+                {"error": True, "message": "This email is already linked to an account"}
+            )
 
         # Create user
         user = User.create(email, name, password, opt_email)
@@ -143,32 +142,24 @@ def create_endpoints(app: Flask) -> None:
         if login_after:
             session[USER_ID] = user.id
 
-        return jsonify({
-            "error": False,
-            "user": user.to_dict(),
-            "loggedIn": login_after
-        })
+        return jsonify(
+            {"error": False, "user": user.to_dict(), "loggedIn": login_after}
+        )
 
-    @app.route('/user/change-name', methods=("POST",))
+    @app.route("/user/change-name", methods=("POST",))
     @ensure_auth
     def user_change_name(user: User):
         """Change the current user's name."""
-        new_name = str(request.form['name']).strip()
+        new_name = str(request.form["name"]).strip()
 
         if len(new_name) == 0:
-            return jsonify({
-                "error": True,
-                "message": "A name must be provided"
-            })
+            return jsonify({"error": True, "message": "A name must be provided"})
 
-        user.update_name(new_name)
+        user.update_user(new_name, user.email, user.opt_email)
 
-        return jsonify({
-            "error": False,
-            "user": user.to_dict()
-        })
+        return jsonify({"error": False, "user": user.to_dict()})
 
-    @app.route('/user/change-password', methods=("POST",))
+    @app.route("/user/change-password", methods=("POST",))
     @ensure_auth
     def user_change_password(user: User):
         """Params: password, new_password, repeat_new_password."""
@@ -178,38 +169,26 @@ def create_endpoints(app: Flask) -> None:
 
         # Check old password is correct
         if not user.validate(old_password):
-            return jsonify({
-                "error": True,
-                "message": "Password is incorrect"
-            })
+            return jsonify({"error": True, "message": "Password is incorrect"})
 
         if len(new_password) == 0:
-            return jsonify({
-                "error": True,
-                "message": "New password must be provided"
-            })
+            return jsonify({"error": True, "message": "New password must be provided"})
 
         # Check new passwords are equal
         if new_password != new_password_repeat:
-            return jsonify({
-                "error": True,
-                "message": "New passwords are not equal"
-            })
+            return jsonify({"error": True, "message": "New passwords are not equal"})
 
         # Check that the passwords are not the same
         if new_password == old_password:
-            return jsonify({
-                "error": True,
-                "message": "New password is the same as the old"
-            })
+            return jsonify(
+                {"error": True, "message": "New password is the same as the old"}
+            )
 
         # TODO
         user.update_password(new_password)
-        return jsonify({
-            "error": False
-        })
+        return jsonify({"error": False})
 
-    @app.route('/user/sectors/get', methods=("GET",))
+    @app.route("/user/sectors/get", methods=("GET",))
     @ensure_auth
     def user_get_sectors(user: User):
         """
@@ -220,57 +199,46 @@ def create_endpoints(app: Flask) -> None:
         }[]
         """
 
-        return jsonify(list(map(Sector.to_dict, sorted(user.get_sectors(), key=lambda s: s.name))))
+        return jsonify(
+            list(map(Sector.to_dict, sorted(user.get_sectors(), key=lambda s: s.name)))
+        )
 
-    @app.route('/user/sectors/add', methods=("POST",))
+    @app.route("/user/sectors/add", methods=("POST",))
     @ensure_auth
     def user_add_sector(user: User):
         """
         Accepts: 'id' of sector to add to user's profile. Returns { error: bool, message?: str, sector?: Sector }
         """
         try:
-            sector_id = int(request.form['id'])
+            sector_id = int(request.form["id"])
         except ValueError:
             abort(400)
             return
-        
-
 
         new_sector = user.add_sector(sector_id)
         if new_sector:
-            return jsonify({
-                "error": False,
-                "message": str(new_sector.name)
-            })
+            return jsonify({"error": False, "message": str(new_sector.name)})
 
-        return jsonify({
-            "error": True,
-            "message": "Error adding sector"
-        })
-    
-        
+        return jsonify({"error": True, "message": "Error adding sector"})
 
-    @app.route('/user/sectors/remove', methods=("POST",))
+    @app.route("/user/sectors/remove", methods=("POST",))
     @ensure_auth
     def user_remove_sector(user: User):
         """
         Accepts: 'id' of sector to remove from user's profile
         """
         try:
-            sector_id = int(request.form['id'])
+            sector_id = int(request.form["id"])
         except ValueError:
             abort(400)
             return
 
         user.remove_sector(sector_id)
 
-        return jsonify({
-            "error": False,
-            "user": user.to_dict()
-        })
-    
-    #TODO
-    @app.route('/news/recent', methods=("GET",))
+        return jsonify({"error": False, "user": user.to_dict()})
+
+    # TODO
+    @app.route("/news/recent", methods=("GET",))
     def news_recent():
         """
         Return JSON in the form:
@@ -285,77 +253,68 @@ def create_endpoints(app: Flask) -> None:
           url: string;
         }[]
         """
-        return jsonify([
-            {
-                "id": 1,
-                "title": "Man Eats Apple",
-                "publisher": "BBC",
-                "published": "2020-05-21 12:00",
-                "overview": "Man eats an apple, says it was the best apple he'd ever eaten.",
-                "sentimentScore": 0.9,
-                "url": "https://www.bbc.co.uk",
-                "sentimentCategory": "very good"
-            },
-            {
-                "id": 2,
-                "title": "CEO Fired After Two Hours",
-                "publisher": "The Guardian",
-                "published": "2023-06-19 14:30",
-                "overview": "CEO so terrible he was fired after just two hours on the job.",
-                "sentimentScore": -0.66,
-                "url": "https://www.theguardian.com/uk",
-                "sentimentCategory": "very bad"
-            }
-        ])
+        return jsonify(
+            [
+                {
+                    "id": 1,
+                    "title": "Man Eats Apple",
+                    "publisher": "BBC",
+                    "published": "2020-05-21 12:00",
+                    "overview": "Man eats an apple, says it was the best apple he'd ever eaten.",
+                    "sentimentScore": 0.9,
+                    "url": "https://www.bbc.co.uk",
+                    "sentimentCategory": "very good",
+                },
+                {
+                    "id": 2,
+                    "title": "CEO Fired After Two Hours",
+                    "publisher": "The Guardian",
+                    "published": "2023-06-19 14:30",
+                    "overview": "CEO so terrible he was fired after just two hours on the job.",
+                    "sentimentScore": -0.66,
+                    "url": "https://www.theguardian.com/uk",
+                    "sentimentCategory": "very bad",
+                },
+            ]
+        )
         # Spoof data
         # abort(501)
-        
-    #TODO
-    #NOT TESTED AT ALL
-    @app.route('/user/follow_company', methods=("POST",))
+
+    # TODO
+    # NOT TESTED AT ALL
+    @app.route("/user/follow_company", methods=("POST",))
     @ensure_auth
     def follow_company(user: User):
         """
         Accepts: 'company_id' of company to follow
         """
         try:
-            company_id = int(request.form['company_id'])
+            company_id = int(request.form["company_id"])
         except ValueError:
             abort(400)
             return
-        user.follow_company(company_id)
-        return jsonify ([
-            {
-                "error": True,
-                "message": "Might have worked"
-            }
-        ])
-    
-    #TODO
-    #NOT TESTED AT ALL
-    @app.route('/user/unfollow_company', methods=("POST",))
+        user.add_company(company_id)
+        return jsonify([{"error": True, "message": "Might have worked"}])
+
+    # TODO
+    # NOT TESTED AT ALL
+    @app.route("/user/unfollow_company", methods=("POST",))
     @ensure_auth
     def unfollow_company(user: User):
         """
         Accepts: 'company_id' of company to unfollow
         """
- 
+
         try:
-            company_id = int(request.form['company_id'])
+            company_id = int(request.form["company_id"])
         except ValueError:
             abort(400)
             return
-        user.unfollow_company(company_id)
-        return jsonify ([
-            {
-                "error": True,
-                "message": "Might have worked"
-            }
-        ])
+        user.remove_company(company_id)
+        return jsonify([{"error": True, "message": "Might have worked"}])
 
-
-    #TODO
-    @app.route('/data/company_details', methods=("POST",))
+    # TODO
+    @app.route("/data/company_details", methods=("POST",))
     @ensure_auth
     def company_details():
         """
@@ -374,41 +333,43 @@ def create_endpoints(app: Flask) -> None:
             sentiment = float,
             last_scraped = DateTime/String}
         """
-        #try:
+        # try:
         #    company_id = int(request.form['company_id'])
-        #except ValueError:
+        # except ValueError:
         #    abort(400)
         #    return
-        #details = Company.get_details(company_id)
-        #if details:
+        # details = Company.get_details(company_id)
+        # if details:
         #    return jsonify(details)
-        #return jsonify
+        # return jsonify
 
-        return jsonify([
-            {
-            "error": False,
-            "id" : 1,
-            "name" : "Apple",
-            "url" : "apple.com",
-            "description" : "Mid phone manufacturer",
-            "location" : "Silicon Valley",
-            "sector_id" : 1,
-            "market_cap" : "$99999",
-            "ceo" : "Tim Cook",
-            "sentiment" : 0.69,
-            "last_scraped" : "2024-01-01 16:20"
-            },
-            {
-            "error": False,
-            "id" : 2,
-            "name" : "Hyperloop One",
-            "url" : "virgin.com",
-            "description" : "Trains, but overcomplicated",
-            "location" : "Backrooms",
-            "sector_id" : 1,
-            "market_cap" : "$1",
-            "ceo" : "Richard Branson",
-            "sentiment" : -1,
-            "last_scraped" : "2024-02-02 04:20"
-            }
-            ])
+        return jsonify(
+            [
+                {
+                    "error": False,
+                    "id": 1,
+                    "name": "Apple",
+                    "url": "apple.com",
+                    "description": "Mid phone manufacturer",
+                    "location": "Silicon Valley",
+                    "sector_id": 1,
+                    "market_cap": "$99999",
+                    "ceo": "Tim Cook",
+                    "sentiment": 0.69,
+                    "last_scraped": "2024-01-01 16:20",
+                },
+                {
+                    "error": False,
+                    "id": 2,
+                    "name": "Hyperloop One",
+                    "url": "virgin.com",
+                    "description": "Trains, but overcomplicated",
+                    "location": "Backrooms",
+                    "sector_id": 1,
+                    "market_cap": "$1",
+                    "ceo": "Richard Branson",
+                    "sentiment": -1,
+                    "last_scraped": "2024-02-02 04:20",
+                },
+            ]
+        )
