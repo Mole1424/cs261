@@ -1,10 +1,12 @@
+aiohttp
 blinker
 click
 colorama
+finnhub-python
 Flask
+Flask-Login
 Flask-Mail
 Flask-SQLAlchemy
-Flask-Login
 greenlet
 itsdangerous
 Jinja2
@@ -16,4 +18,3 @@ typing_extensions
 Werkzeug
 wheel
 yfinance
-finnhub-python
