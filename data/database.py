@@ -2,12 +2,12 @@ from __future__ import annotations
 from flask_sqlalchemy import SQLAlchemy
 import werkzeug.security
 from datetime import datetime
-from sqlalchemy import asc
 from analysis.analysis import sentiment_label
 
 
 # Create database
 db = SQLAlchemy()
+
 
 class User(db.Model):
     __tablename__ = "User"
@@ -58,10 +58,16 @@ class User(db.Model):
             .all()
         )
 
-    def add_sector(self, sector_id: int) -> None:
+    def add_sector(self, sector_id: int) -> Sector:
         """Add a sector to user."""
-        db.session.add(UserSector(user_id=self.id, sector_id=sector_id))
-        db.session.commit()
+        if (
+            not db.session.query(UserSector)
+            .where(UserSector.user_id == self.id, UserSector.sector_id == sector_id)
+            .first()
+        ):
+            db.session.add(UserSector(user_id=self.id, sector_id=sector_id))
+            db.session.commit()
+        return db.session.query(Sector).where(Sector.id == sector_id).first()
 
     def remove_sector(self, sector_id: int) -> None:
         """Remove a sector from user."""
@@ -79,10 +85,16 @@ class User(db.Model):
             .all()
         )
 
-    def add_company(self, company_id: int) -> None:
+    def add_company(self, company_id: int) -> Company:
         """Add a company to user."""
-        db.session.add(UserCompany(user_id=self.id, company_id=company_id))
-        db.session.commit()
+        if not (
+            db.session.query(UserCompany)
+            .where(UserCompany.user_id == self.id, UserCompany.company_id == company_id)
+            .first()
+        ):
+            db.session.add(UserCompany(user_id=self.id, company_id=company_id))
+            db.session.commit()
+        return db.session.query(Company).where(Company.id == company_id).first()
 
     def remove_company(self, company_id: int) -> None:
         """Remove a company from user."""
@@ -90,34 +102,6 @@ class User(db.Model):
             UserCompany.user_id == self.id, UserCompany.company_id == company_id
         ).delete()
         db.session.commit()
-
-    
-    def add_sector(self, sector_id: int) -> Sector:
-        """User follows sector, returns added row"""
-        already_added = db.session.query(UserSector).where(UserSector.sector_id == sector_id, UserSector.user_id == self.id).first()
-        if not already_added:
-            sector_add = UserSector(user_id = self.id, sector_id = sector_id)
-            db.session.add(sector_add)
-            db.session.commit()
-        return db.session.query(Sector).where(Sector.id == sector_id).first()
-
-    def get_companies(self) -> list[Company]:
-        """Return list of companies this user follows"""
-        return db.session.query(Company).join(UserCompany, Company.id == UserCompany.company_id)\
-            .where(UserCompany.user_id == self.id).all()
-
-    def unfollow_company(self, company_id: int):
-        """Remove a company from user follows."""
-        db.session.query(UserCompany).where(UserCompany.user_id == self.id, UserCompany.company_id == company_id).delete()
-        db.session.commit()
-    
-    def follow_company(self, company_id: int):
-        """User follows a company"""
-        already_added = db.session.query(UserCompany).where(UserCompany.company_id == company_id, UserCompany.user_id == self.id).first()
-        if not already_added:
-            company_add = UserCompany(user_id = self.id, company_id = company_id)
-            db.session.add(company_add)
-            db.session.commit()
 
         # Add all sectors of the pertinent company to the usersector table if they are not there already
         company_sectors = db.session.query(CompanySector.sector_id).where(CompanySector.company_id == company_id).all()
@@ -220,11 +204,6 @@ class Sector(db.Model):
     def get_companies(self) -> list[Company]:
         """Return list of companies in this sector."""
         return db.session.query(Company).where(Company.sector_id == self.id).all()
-
-    @staticmethod
-    def get_all() -> list[Sector]:
-        """Return list of sectors in the database."""
-        return db.session.query(Sector).order_by(asc(Sector.id)).all()
 
 
 class UserSector(db.Model):
@@ -363,22 +342,22 @@ class Company(db.Model):
         return db.session.query(Stock).where(Stock.company_id == self.id).all()
 
     def to_dict(self):
-        return{
-            "id" : self.id,
-            "name" : self.name,
-            "url" : self.url,
-            "description" : self.description,
-            "location" : self.location,
-            "sector_id" : self.sector_id,
-            "market_cap" : self.market_cap,
-            "ceo" : self.ceo,
-            "sentiment" : self.sentiment,
-            "last_scraped" : self.last_scraped
+        return {
+            "id": self.id,
+            "name": self.name,
+            "url": self.url,
+            "description": self.description,
+            "location": self.location,
+            "sector_id": self.sector_id,
+            "market_cap": self.market_cap,
+            "ceo": self.ceo,
+            "sentiment": self.sentiment,
+            "last_scraped": self.last_scraped,
         }
-     
+
     @staticmethod
-    def get_details(company_id : int) -> Company:
-        return db.session.query(Company).filter_by(id = company_id).first()
+    def get_details(company_id: int) -> Company:
+        return db.session.query(Company).filter_by(id=company_id).first()
 
 
 class Stock(db.Model):
@@ -529,7 +508,7 @@ class Article(db.Model):
     def set_score(self):
         """Set the sentiment score of the article"""
         # Should probably use entire text instead
-        self.sentiment = sentiment_label(self.summary)['score']
+        self.sentiment = sentiment_label(self.summary)["score"]
         db.session.commit()
 
 
@@ -539,7 +518,7 @@ class Story(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"))
     title = db.Column(db.String)
-    sentiment = db.Column(db.Float, deafult=0.0)
+    sentiment = db.Column(db.Float, default=0.0)
 
     def __innit__(self, company_id: int, title: str):
         self.company_id = company_id

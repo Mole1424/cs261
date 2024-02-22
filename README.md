@@ -1,5 +1,5 @@
 # cs261
-A financial analysis platform, that aggregates news articles on a company and analyses their potential affect on a companie's finances.
+A financial analysis platform, that aggregates news articles on a company and analyses their potential affect on a company's finances.
 
 ## Setup
 This application requires `Python 3.12`, `pip` and `Node.js` to be installed.
@@ -18,6 +18,7 @@ To stop the server, press `Ctrl+C`.
 ## File Structure
 The general structure of the project is given below. The descriptions of noteworthy folders and files are provided.
 
+- `analysis/` - contains code for the machine learning aspects of the program
 - `data/` - contains data for the application.
   - `database.db` - SQLite database file.
 - `public/` - contains front-end source files.
