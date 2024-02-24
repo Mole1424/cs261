@@ -81,7 +81,7 @@ class User(db.Model):
         return (
             db.session.query(Company)
             .join(UserCompany, Company.id == UserCompany.company_id)
-            .where(UserCompany.user_id == self.id)
+            .where(UserCompany.user_id == self.id, UserCompany.distance == -1)
             .all()
         )
 
@@ -109,20 +109,23 @@ class User(db.Model):
             self.add_sector(sector)
 
     def set_distances(self):
-        non_followed = db.session.query(Company.id).outerjoin(UserCompany, (UserCompany.company_id == Company.id) & (UserCompany.user_id == self.id)).filter(UserCompany.user_id == None).all()
-        user_sectors = db.session.query(UserSector).filter(UserSector.user_id == self.id)
+        non_followed = db.session.query(Company.id).join(UserCompany, Company.id == UserCompany.company_id).where(UserCompany.user_id == self.id, UserCompany.distance != -1).all()
+        user_sectors = db.session.query(UserSector).where(UserSector.user_id == self.id)
 
         for company in non_followed:
             company_sectors = db.session.query(CompanySector).filter(CompanySector.company_id == company)
             distance = user_sectors.outerjoin(company_sectors, user_sectors.sector_id == company_sectors.sector_id).filter(user_sectors.user_id == None | company_sectors.company_id == None).count()
-
-            existing_record = db.session.query(UserCompanyd).filter_by(user_id=self.id, company_id=company).first()
+            existing_record = db.session.query(UserCompany).filter_by(user_id=self.id, company_id=company).first()
             
             if not existing_record:
-                db.session.add(UserCompanyd(user_id=self.id, company_id=company, distance=distance))
+                db.session.add(UserCompany(user_id=self.id, company_id=company, distance=distance))
             else:
                 existing_record.distance = distance
             db.session.commit()
+    
+    def soft_recommend(self, k) -> list[UserCompany]:
+        recommendations = db.session.query(UserCompany).where(UserCompany.distance != -1).order_by(UserCompany.distance.desc())
+        return recommendations[:k]
 
     def to_dict(self) -> dict:
         """Return object information to send to front-end."""
@@ -434,6 +437,14 @@ class UserCompany(db.Model):
     def is_following(self) -> bool:
         """Return if the current user is following the current company."""
         return self.distance == -1
+    
+    def to_dict(self) -> dict:
+        """Return object information to send to front-end."""
+        return {
+            "user_id": self.user_id,
+            "company_id": self.company_id,
+            "distance": self.distance
+        }
 
 
 class Article(db.Model):
