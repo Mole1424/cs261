@@ -35,9 +35,26 @@ def is_valid_user(email: str, password: str) -> bool:
     return user.validate(password)
 
 
-def get_company_by_id(company_id: int) -> db.Company | None:
-    """Get a company by their ID."""
-    return db.db.session.query(db.Company).where(db.Company.id == company_id).one_or_none()
+def get_company_details(company_id: int, user_id: int = None) -> tuple[db.Company, dict] | None:
+    """Return (company, company_details)."""
+    company = db.db.session.query(db.Company).where(db.Company.id == company_id).one_or_none()
+
+    if not company:
+        return None
+
+    details = {
+        **company.to_dict(),
+        "sectors": list(map(lambda x: x.sector.to_dict(), db.CompanySector.get_by_company(company.id))),
+        # TODO calculate stock delta (last day)
+        "stockDelta": 0.0,
+    }
+
+    # If user was provided, check if they are following the company
+    if user_id is not None:
+        user_company = db.UserCompany.get(user_id, company.id)
+        details['isFollowing'] = False if user_company is None else user_company.is_following()
+
+    return company, details
 
 
 def get_all_sectors() -> list[db.Sector]:

@@ -2,8 +2,7 @@ from __future__ import annotations
 from flask_sqlalchemy import SQLAlchemy
 import werkzeug.security
 from datetime import datetime
-from analysis.analysis import sentiment_label
-
+from analysis.analysis import sentiment_label, sentiment_score_to_text
 
 # Create database
 db = SQLAlchemy()
@@ -92,7 +91,7 @@ class User(db.Model):
             .where(UserCompany.user_id == self.id, UserCompany.company_id == company_id)
             .first()
         ):
-            db.session.add(UserCompany(user_id=self.id, company_id=company_id))
+            db.session.add(UserCompany(user_id=self.id, company_id=company_id, distance=-1))
             db.session.commit()
         return db.session.query(Company).where(Company.id == company_id).first()
 
@@ -104,9 +103,9 @@ class User(db.Model):
         db.session.commit()
 
         # Add all sectors of the pertinent company to the usersector table if they are not there already
-        company_sectors = db.session.query(CompanySector.sector_id).where(CompanySector.company_id == company_id).all()
+        company_sectors: list[CompanySector] = db.session.query(CompanySector).where(CompanySector.company_id == company_id).all()
         for sector in company_sectors:
-            self.add_sector(sector)
+            self.add_sector(sector.sector_id)
 
     def set_distances(self):
         non_followed = db.session.query(Company.id).outerjoin(UserCompany, (UserCompany.company_id == Company.id) & (UserCompany.user_id == self.id)).filter(UserCompany.user_id == None).all()
@@ -116,10 +115,10 @@ class User(db.Model):
             company_sectors = db.session.query(CompanySector).filter(CompanySector.company_id == company)
             distance = user_sectors.outerjoin(company_sectors, user_sectors.sector_id == company_sectors.sector_id).filter(user_sectors.user_id == None | company_sectors.company_id == None).count()
 
-            existing_record = db.session.query(UserCompanyd).filter_by(user_id=self.id, company_id=company).first()
+            existing_record = db.session.query(UserCompany).filter_by(user_id=self.id, company_id=company).first()
             
             if not existing_record:
-                db.session.add(UserCompanyd(user_id=self.id, company_id=company, distance=distance))
+                db.session.add(UserCompany(user_id=self.id, company_id=company, distance=distance))
             else:
                 existing_record.distance = distance
             db.session.commit()
@@ -222,9 +221,16 @@ class CompanySector(db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
     sector_id = db.Column(db.Integer, db.ForeignKey("Sector.id"), primary_key=True)
 
+    company = db.relationship("Company", backref="sectors", lazy=True)
+    sector = db.relationship("Sector", backref="companies", lazy=True)
+
     def __init__(self, company_id: int, sector_id: int):
         self.company_id = company_id
         self.sector_id = sector_id
+
+    @staticmethod
+    def get_by_company(company_id: int) -> list[CompanySector]:
+        return db.session.query(CompanySector).filter(CompanySector.company_id == company_id).all()
 
 
 class Company(db.Model):
@@ -346,12 +352,13 @@ class Company(db.Model):
             "id": self.id,
             "name": self.name,
             "url": self.url,
+            "logoUrl": "https://logo.clearbit.com/" + self.url,
             "description": self.description,
             "location": self.location,
-            "sectorId": self.sector_id,
             "marketCap": self.market_cap,
             "ceo": self.ceo,
             "sentiment": self.sentiment,
+            "sentimentCategory": sentiment_score_to_text(self.sentiment),
             "lastScraped": self.last_scraped,
         }
 
@@ -434,6 +441,21 @@ class UserCompany(db.Model):
     def is_following(self) -> bool:
         """Return if the current user is following the current company."""
         return self.distance == -1
+
+    @staticmethod
+    def get_by_user(user_id: int) -> list[UserCompany]:
+        """Get all UserCompany's by user."""
+        return db.session.query(UserCompany).filter(UserCompany.user_id == user_id).all()
+
+    @staticmethod
+    def get_by_company(company_id: int) -> list[UserCompany]:
+        """Get all UserCompany's by user."""
+        return db.session.query(UserCompany).filter(UserCompany.company_id == company_id).all()
+
+    @staticmethod
+    def get(user_id: int, company_id: int) -> UserCompany | None:
+        return db.session.query(UserCompany).filter(UserCompany.user_id == user_id,
+                                                    UserCompany.company_id == company_id).one_or_none()
 
 
 class Article(db.Model):

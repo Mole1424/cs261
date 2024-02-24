@@ -1,4 +1,4 @@
-export type SentimentCategory = "very bad" | "bad" | "neutral" | "good" | "very good";
+import SentimentCategory from "./SentimentCategory";
 
 export default interface INewsArticle {
   id: number;

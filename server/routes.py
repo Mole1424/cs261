@@ -4,8 +4,8 @@ from typing import Callable
 from flask import Flask, request, session, abort, jsonify
 
 from server import constants
-from data.database import db, User, Sector, Company
-import data.interface as dt
+from data.database import db, User, Sector, Company, UserCompany
+import data.interface as interface
 
 USER_ID = "user_id"
 
@@ -18,9 +18,9 @@ def is_logged_in() -> bool:
 def get_user() -> User | None:
     """Get the current user who is logged in."""
     if constants.USER_DEFAULT is None:
-        return dt.get_user_by_id(session[USER_ID]) if is_logged_in() else None
+        return interface.get_user_by_id(session[USER_ID]) if is_logged_in() else None
     else:
-        return dt.get_user_by_id(constants.USER_DEFAULT)
+        return interface.get_user_by_id(constants.USER_DEFAULT)
 
 
 def ensure_auth(func: Callable[[User], None]):
@@ -41,17 +41,6 @@ def get_form_or_default(property_name: str, default: any) -> any:
     return request.form[property_name] if property_name in request.form else default
 
 
-"""not finalised"""
-
-
-def company_details(company_id: int) -> Company | None:
-    details = dt.get_company_by_id(company_id)
-    if details:
-        return list(map(Company.to_dict, details))
-    else:
-        return None
-
-
 def create_endpoints(app: Flask) -> None:
     """Register endpoints to the given application."""
 
@@ -62,7 +51,7 @@ def create_endpoints(app: Flask) -> None:
 
         email = str(get_form_or_default("email", ""))
         password = str(get_form_or_default("password", ""))
-        user = dt.get_user_by_email(email)
+        user = interface.get_user_by_email(email)
 
         if user is not None and user.validate(password):
             session[USER_ID] = user.id
@@ -84,7 +73,7 @@ def create_endpoints(app: Flask) -> None:
         """Return list of sectors in the database."""
         return jsonify(
             list(
-                map(Sector.to_dict, sorted(dt.get_all_sectors(), key=lambda s: s.name))
+                map(Sector.to_dict, sorted(interface.get_all_sectors(), key=lambda s: s.name))
             )
         )
 
@@ -128,13 +117,13 @@ def create_endpoints(app: Flask) -> None:
             )
 
         # Is the email already registered?
-        if dt.get_user_by_email(email) is not None:
+        if interface.get_user_by_email(email) is not None:
             return jsonify(
                 {"error": True, "message": "This email is already linked to an account"}
             )
 
         # Create user
-        user = dt.create_user(email, name, password, opt_email)
+        user = interface.create_user(email, name, password, opt_email)
 
         # Log the user in?
         if login_after:
@@ -236,6 +225,12 @@ def create_endpoints(app: Flask) -> None:
 
         return jsonify({"error": False, "user": user.to_dict()})
 
+    @app.route('/user/following', methods=("GET",))
+    @ensure_auth
+    def user_get_following(user: User):
+        """Return list of companies the current user is following."""
+        return map(lambda uc: uc.company, filter(UserCompany.is_following, UserCompany.get_by_user(user.id)))
+
     # TODO
     @app.route("/news/recent", methods=("GET",))
     def news_recent():
@@ -248,7 +243,7 @@ def create_endpoints(app: Flask) -> None:
           published: string;
           overview: string;
           sentimentScore: number;
-          sentimentCategory: "very bad" | "bad" | "neutral" | "good" | "very good";
+          sentimentCategory: string
           url: string;
         }[]
         """
@@ -262,7 +257,7 @@ def create_endpoints(app: Flask) -> None:
                     "overview": "Man eats an apple, says it was the best apple he'd ever eaten.",
                     "sentimentScore": 0.9,
                     "url": "https://www.bbc.co.uk",
-                    "sentimentCategory": "very good",
+                    "sentimentCategory": "Very Positive",
                 },
                 {
                     "id": 2,
@@ -272,7 +267,7 @@ def create_endpoints(app: Flask) -> None:
                     "overview": "CEO so terrible he was fired after just two hours on the job.",
                     "sentimentScore": -0.66,
                     "url": "https://www.theguardian.com/uk",
-                    "sentimentCategory": "very bad",
+                    "sentimentCategory": "Very Negative",
                 },
             ]
         )
@@ -281,94 +276,67 @@ def create_endpoints(app: Flask) -> None:
 
     # TODO
     # NOT TESTED AT ALL
-    @app.route("/user/follow_company", methods=("POST",))
+    @app.route("/company/follow", methods=("POST",))
     @ensure_auth
     def follow_company(user: User):
-        """
-        Accepts: 'company_id' of company to follow
-        """
+        """Accepts: 'id' of company to follow."""
         try:
-            company_id = int(request.form["company_id"])
+            company_id = int(request.form["id"])
         except ValueError:
             abort(400)
             return
+
         user.add_company(company_id)
-        return jsonify([{"error": True, "message": "Might have worked"}])
+
+        return "", 200
 
     # TODO
     # NOT TESTED AT ALL
-    @app.route("/user/unfollow_company", methods=("POST",))
+    @app.route("/company/unfollow", methods=("POST",))
     @ensure_auth
     def unfollow_company(user: User):
-        """
-        Accepts: 'company_id' of company to unfollow
-        """
-
+        """Accepts: 'id' of company to unfollow."""
         try:
-            company_id = int(request.form["company_id"])
+            company_id = int(request.form["id"])
         except ValueError:
             abort(400)
             return
+
         user.remove_company(company_id)
-        return jsonify([{"error": True, "message": "Might have worked"}])
+
+        return "", 200
 
     # TODO
-    @app.route("/data/company_details", methods=("POST",))
+    @app.route("/company/details", methods=("POST",))
     @ensure_auth
-    def company_details():
+    def get_company_details(user: User):
         """
-        Accepts: id/name/unique-identifier of company
-
-        Returns {
-            error: bool,
-            id = integer,
-            name = string,
-            url = string,
-            description = string,
-            location = string,
-            sector_id = integer,
-            market_cap = string,
-            ceo = string,
-            sentiment = float,
-            last_scraped = DateTime/String}
+        Accepts: id/name/unique-identifier of company.
         """
-        # try:
-        #    company_id = int(request.form['company_id'])
-        # except ValueError:
-        #    abort(400)
-        #    return
-        # details = Company.get_details(company_id)
-        # if details:
-        #    return jsonify(details)
-        # return jsonify
+        try:
+            company_id = int(request.form['id'])
+        except ValueError:
+            abort(400)
+            return
 
-        return jsonify(
-            [
-                {
-                    "error": False,
-                    "id": 1,
-                    "name": "Apple",
-                    "url": "apple.com",
-                    "description": "Mid phone manufacturer",
-                    "location": "Silicon Valley",
-                    "sector_id": 1,
-                    "market_cap": "$99999",
-                    "ceo": "Tim Cook",
-                    "sentiment": 0.69,
-                    "last_scraped": "2024-01-01 16:20",
-                },
-                {
-                    "error": False,
-                    "id": 2,
-                    "name": "Hyperloop One",
-                    "url": "virgin.com",
-                    "description": "Trains, but overcomplicated",
-                    "location": "Backrooms",
-                    "sector_id": 1,
-                    "market_cap": "$1",
-                    "ceo": "Richard Branson",
-                    "sentiment": -1,
-                    "last_scraped": "2024-02-02 04:20",
-                },
-            ]
-        )
+        company, company_details = interface.get_company_details(company_id, user.id)
+
+        if not company:
+            return jsonify({
+                "error": True,
+                "message": f"Cannot find company with id #{company_id}"
+            })
+
+        return jsonify({
+            "error": False,
+            "data": company_details
+        })
+
+    @app.route('/company/popular', methods=("GET",))
+    @ensure_auth
+    def get_popular_companies(user: User):
+        """Return popular companies."""
+        # TODO actually make this return popular companies
+        return jsonify(list(map(lambda c: interface.get_company_details(c.id, user.id)[1], db.session.query(Company).all())))
+
+

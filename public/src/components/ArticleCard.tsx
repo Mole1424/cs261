@@ -1,13 +1,8 @@
-import INewsArticle, {SentimentCategory} from "../types/INewsArticle";
+import INewsArticle from "../types/INewsArticle";
+import {formatDate, getIconFromCategory} from "../util";
 
-import FaceWinkIcon from "assets/face-wink.svg"
-import FaceHappyIcon from "assets/face-happy.svg";
-import FaceNeutralIcon from "assets/face-neutral.svg";
-import FaceSadIcon from "assets/face-sad.svg";
-import FaceAngryIcon from "assets/face-angry.svg";
 import LinkIcon from "assets/link.svg";
 import "styles/article-card.scss";
-import {formatDate} from "../util";
 
 
 export const ArticleCard = ({ article }: { article: INewsArticle }) => {
@@ -36,18 +31,3 @@ export const ArticleCard = ({ article }: { article: INewsArticle }) => {
 
 export default ArticleCard;
 
-/** Given the sentiment category, return the appropriate SVG icon string and class */
-export function getIconFromCategory(category: SentimentCategory): [string, string] {
-  switch (category) {
-    case "neutral":
-      return [FaceNeutralIcon, ""];
-    case "good":
-      return [FaceHappyIcon, "style-green"];
-    case "very good":
-      return [FaceWinkIcon, "style-green"];
-    case "bad":
-      return [FaceSadIcon, "style-red"];
-    case "very bad":
-      return [FaceAngryIcon, "style-red"];
-  }
-}

@@ -18,9 +18,10 @@ const root = createRoot(container);
   // Check if a user is already signed in
   const userData = await getCurrentUserData();
 
+  // TODO change default tab toi 'Recent'
   root.render(
     <StrictMode>
-      <App initialUser={userData} defaultTab={'Recent'} />
+      <App initialUser={userData} defaultTab={'Popular'} />
     </StrictMode>
   );
 })();

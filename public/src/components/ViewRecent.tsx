@@ -4,7 +4,7 @@ import {IUserData} from "../types/IUserData";
 import INewsArticle from "../types/INewsArticle";
 import ArticleCard from "./ArticleCard";
 
-import "styles/view-recent.scss";
+import "styles/view-cards.scss";
 
 export interface IProps {
   user: IUserData;
@@ -25,9 +25,9 @@ export const ViewRecent = ({ user }: IProps) => {
   }, []);
 
   return (
-    <main className={'content-recent'}>
-      <div className={'article-cards'}>
-        {newsArticles.map(article => 
+    <main className={'content-recent content-cards'}>
+      <div className={'cards'}>
+        {newsArticles.map(article =>
           <ArticleCard key={article.id} article={article} />
         )}
       </div>
