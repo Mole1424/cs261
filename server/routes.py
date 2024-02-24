@@ -134,9 +134,7 @@ def create_endpoints(app: Flask) -> None:
             )
 
         # Create user
-        user = User.create(email, name, password, opt_email)
-        db.session.add(user)
-        db.session.commit()
+        user = dt.create_user(email, name, password, opt_email)
 
         # Log the user in?
         if login_after:
@@ -184,8 +182,9 @@ def create_endpoints(app: Flask) -> None:
                 {"error": True, "message": "New password is the same as the old"}
             )
 
-        # TODO
         user.update_password(new_password)
+        db.session.commit()
+
         return jsonify({"error": False})
 
     @app.route("/user/sectors/get", methods=("GET",))

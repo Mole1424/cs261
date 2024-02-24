@@ -18,7 +18,7 @@ class User(db.Model):
     password = db.Column(db.String)
     opt_email = db.Column(db.Boolean, default=False)
 
-    def __innit__(self, email: str, name: str, password: str, opt_email: bool = False):
+    def __init__(self, email: str, name: str, password: str, opt_email: bool = False):
         self.email = email
         self.name = name
         self.password = werkzeug.security.generate_password_hash(password)
@@ -124,7 +124,6 @@ class User(db.Model):
                 existing_record.distance = distance
             db.session.commit()
 
-
     def to_dict(self) -> dict:
         """Return object information to send to front-end."""
         return {
@@ -146,7 +145,7 @@ class Notification(db.Model):
     target_type = db.Column(db.Integer)
     message = db.Column(db.String)
 
-    def __innit__(self, target_id: int, target_type: int, message: str):
+    def __init__(self, target_id: int, target_type: int, message: str):
         self.target_id = target_id
         self.target_type = target_type
         self.message = message
@@ -184,7 +183,7 @@ class UserNotification(db.Model):
         db.Integer, db.ForeignKey("Notification.id"), primary_key=True
     )
 
-    def __innit__(self, user_id: int, notification_id: int):
+    def __init__(self, user_id: int, notification_id: int):
         self.user_id = user_id
         self.notification_id = notification_id
 
@@ -195,7 +194,7 @@ class Sector(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
 
-    def __innit__(self, name: str):
+    def __init__(self, name: str):
         self.name = name
 
     def to_dict(self):
@@ -212,9 +211,10 @@ class UserSector(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
     sector_id = db.Column(db.Integer, db.ForeignKey("Sector.id"), primary_key=True)
 
-    def __innit__(self, user_id: int, sector_id: int):
+    def __init__(self, user_id: int, sector_id: int):
         self.user_id = user_id
         self.sector_id = sector_id
+
 
 class CompanySector(db.Model):
     __tablename__ = "CompanySector"
@@ -222,7 +222,7 @@ class CompanySector(db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
     sector_id = db.Column(db.Integer, db.ForeignKey("Sector.id"), primary_key=True)
 
-    def __innit__(self, company_id: int, sector_id: int):
+    def __init__(self, company_id: int, sector_id: int):
         self.company_id = company_id
         self.sector_id = sector_id
 
@@ -240,7 +240,7 @@ class Company(db.Model):
     sentiment = db.Column(db.Float, default=0.0)
     last_scraped = db.Column(db.DateTime)
 
-    def __innit__(
+    def __init__(
         self,
         name: str,
         url: str,
@@ -248,7 +248,7 @@ class Company(db.Model):
         location: str,
         market_cap: int,
         ceo: str,
-        last_scraped: datetime.datetime,
+        last_scraped: datetime,
     ):
         self.name = name
         self.url = url
@@ -266,7 +266,7 @@ class Company(db.Model):
         location: str,
         market_cap: int,
         ceo: str,
-        last_scraped: datetime.datetime,
+        last_scraped: datetime,
     ) -> None:
         """Update the company's information."""
         self.name = name
@@ -341,18 +341,18 @@ class Company(db.Model):
         """Return list of stocks that have this company."""
         return db.session.query(Stock).where(Stock.company_id == self.id).all()
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {
             "id": self.id,
             "name": self.name,
             "url": self.url,
             "description": self.description,
             "location": self.location,
-            "sector_id": self.sector_id,
-            "market_cap": self.market_cap,
+            "sectorId": self.sector_id,
+            "marketCap": self.market_cap,
             "ceo": self.ceo,
             "sentiment": self.sentiment,
-            "last_scraped": self.last_scraped,
+            "lastScraped": self.last_scraped,
         }
 
     @staticmethod
@@ -374,7 +374,7 @@ class Stock(db.Model):
     stock_month = db.Column(db.String)
     stock_year = db.Column(db.String)
 
-    def __innit__(
+    def __init__(
         self,
         symbol: str,
         company_id: int,
@@ -424,22 +424,16 @@ class UserCompany(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
-
-    def __innit__(self, user_id: int, company_id: int):
-        self.user_id = user_id
-        self.company_id = company_id
-
-class UserCompanyd(db.Model):
-    __tablename__ = "UserCompanyd"
-
-    user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
-    company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
     distance = db.Column(db.Integer)
 
-    def __innit__(self, user_id: int, company_id: int, distance: int):
+    def __init__(self, user_id: int, company_id: int, distance: int):
         self.user_id = user_id
         self.company_id = company_id
         self.distance = distance
+
+    def is_following(self) -> bool:
+        """Return if the current user is following the current company."""
+        return self.distance == -1
 
 
 class Article(db.Model):
@@ -453,12 +447,12 @@ class Article(db.Model):
     summary = db.Column(db.String)
     sentiment = db.Column(db.Float, default=0.0)
 
-    def __innit__(
+    def __init__(
         self,
         url: str,
         headline: str,
         publisher: str,
-        date: datetime.datetime,
+        date: datetime,
         summary: str,
     ):
         self.url = url
@@ -520,7 +514,7 @@ class Story(db.Model):
     title = db.Column(db.String)
     sentiment = db.Column(db.Float, default=0.0)
 
-    def __innit__(self, company_id: int, title: str):
+    def __init__(self, company_id: int, title: str):
         self.company_id = company_id
         self.title = title
 
@@ -538,12 +532,10 @@ class Story(db.Model):
 
     def get_articles(self) -> list[Article]:
         """Return list of articles that have this story."""
-        return (
-            db.session.query(Article)
-            .join(StoryArticle, Article.id == StoryArticle.article_id)
-            .where(StoryArticle.story_id == self.id)
+        return db.session.query(Article)\
+            .join(StoryArticle, Article.id == StoryArticle.article_id)\
+            .where(StoryArticle.story_id == self.id)\
             .all()
-        )
 
     def get_companies(self) -> list[Company]:
         """Return list of companies that have this story."""
@@ -561,7 +553,7 @@ class StoryArticle(db.Model):
     story_id = db.Column(db.Integer, db.ForeignKey("Story.id"), primary_key=True)
     article_id = db.Column(db.Integer, db.ForeignKey("Article.id"), primary_key=True)
 
-    def __innit__(self, story_id: int, article_id: int):
+    def __init__(self, story_id: int, article_id: int):
         self.story_id = story_id
         self.article_id = article_id
 
@@ -572,7 +564,7 @@ class ArticleCompany(db.Model):
     article_id = db.Column(db.Integer, db.ForeignKey("Article.id"), primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
 
-    def __innit__(self, article_id: int, company_id: int):
+    def __init__(self, article_id: int, company_id: int):
         self.article_id = article_id
         self.company_id = company_id
 
@@ -583,6 +575,6 @@ class StoryCompany(db.Model):
     stock_id = db.Column(db.Integer, db.ForeignKey("Story.id"), primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
 
-    def __innit__(self, story_id: int, company_id: int):
+    def __init__(self, story_id: int, company_id: int):
         self.story_id = story_id
         self.company_id = company_id

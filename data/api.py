@@ -1,7 +1,5 @@
 import finnhub
 import yfinance as yf
-import asyncio
-import concurrent.futures
 
 from aiohttp import ClientSession
 from os import getenv
@@ -73,4 +71,4 @@ class API:
                     keys = [key for key in data.keys() if "Time Series" in key]
                     return data[keys[0]]["4. close"][:num]
                 else:
-                    return {}
+                    return []
