@@ -3,6 +3,7 @@
 html {
     width: 99vw;
     height: 99vh;
+    background-color: V.$primary-bg;
 }
 
 body {
@@ -20,6 +21,7 @@ body {
     font-family: V.$font-family;
     background-color: V.$primary-bg;
     color: V.$primary-fg;
+    overflow-x: hidden;
 }
 
 .error-card {

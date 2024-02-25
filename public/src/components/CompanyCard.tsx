@@ -49,11 +49,16 @@ export const CompanyCard = ({ company }: { company: ICompanyDetails }) => {
         ? <span className={'company-follow btn btn-danger'} onClick={e => clickUnfollow(e as unknown as MouseEvent)}>Unfollow</span>
         : <span className={'company-follow btn'} onClick={e => clickFollow(e as unknown as MouseEvent)}>Follow</span>}
     <span className={'company-sectors'}>
-      <span>Sectors:</span>
-      {company.sectors.map(sector =>
-        <span className={'sector-tag'} key={sector.id}>
-          {sector.name}
-        </span>)}
+      {company.sectors.length === 0
+        ? <span>No sectors</span>
+        : <>
+          <span>Sectors:</span>
+          {company.sectors.map(sector =>
+            <span className={'sector-tag'} key={sector.id}>
+              {sector.name}
+            </span>)}
+        </>
+      }
     </span>
   </div>;
 };
