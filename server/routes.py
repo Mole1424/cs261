@@ -273,6 +273,25 @@ def create_endpoints(app: Flask) -> None:
         )
         # Spoof data
         # abort(501)
+    
+        # TODO
+    @app.route("/user/for_you", methods=("GET",))
+    @ensure_auth
+    def recommend(user: User):
+        """
+        Return JSON in the form:
+        {
+          user_id: number;
+          company_id: number;
+          distance: number;
+        }[]
+        """
+        user.set_distances()
+        recommendations = user.soft_recommend(2)
+        return jsonify(
+            [recommendation.to_dict() for recommendation in recommendations]
+        )
+    # Not sure it works since db is empty
 
     # TODO
     # NOT TESTED AT ALL

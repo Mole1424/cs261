@@ -15,10 +15,15 @@ export interface ICompany {
   lastScraped: string; // Date
 }
 
-export default ICompany;
-
 export interface ICompanyDetails extends ICompany {
     sectors: ISector[];
     stockDelta: number;
     isFollowing: boolean;
 }
+
+export interface IUserCompany {
+  user_id: number;
+  company_id: number;
+  distance: number;
+}
+
