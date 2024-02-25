@@ -1,11 +1,11 @@
 from functools import wraps
 from typing import Callable
-
 from flask import Flask, request, session, abort, jsonify
 
 from server import constants
 from data.database import db, User, Sector, Company, UserCompany
 import data.interface as interface
+from data.database import db, User, Sector, Company, Article
 
 USER_ID = "user_id"
 
@@ -247,6 +247,7 @@ def create_endpoints(app: Flask) -> None:
           url: string;
         }[]
         """
+
         return jsonify(
             [
                 {
@@ -288,10 +289,8 @@ def create_endpoints(app: Flask) -> None:
         """
         user.set_distances()
         recommendations = user.soft_recommend(2)
-        return jsonify(
-            [recommendation.to_dict() for recommendation in recommendations]
-        )
-    # Not sure it works since db is empty
+        return jsonify(list(map(UserCompany.to_dict, recommendations)))
+    # Not sure if it works since db is empty
 
     # TODO
     # NOT TESTED AT ALL
@@ -357,5 +356,3 @@ def create_endpoints(app: Flask) -> None:
         """Return popular companies."""
         # TODO actually make this return popular companies
         return jsonify(list(map(lambda c: interface.get_company_details(c.id, user.id)[1], db.session.query(Company).all())))
-
-

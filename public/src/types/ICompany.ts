@@ -22,8 +22,8 @@ export interface ICompanyDetails extends ICompany {
 }
 
 export interface IUserCompany {
-  user_id: number;
-  company_id: number;
+  userId: number;
+  companyId: number;
   distance: number;
 }
 

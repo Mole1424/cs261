@@ -1,9 +1,10 @@
+from datetime import datetime
 from os import getenv, path, getcwd
 from flask import Flask, render_template
 import mimetypes
 
 from server import constants
-from data.database import db
+from data.database import db, Company, Article
 from server.mail import mail
 from server.routes import create_endpoints
 

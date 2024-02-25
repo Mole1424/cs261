@@ -449,8 +449,8 @@ class UserCompany(db.Model):
     def to_dict(self) -> dict:
         """Return object information to send to front-end."""
         return {
-            "user_id": self.user_id,
-            "company_id": self.company_id,
+            "userId": self.user_id,
+            "companyId": self.company_id,
             "distance": self.distance
         }
 
