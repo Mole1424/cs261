@@ -15,10 +15,17 @@ To build the front-end code, please run `npm run build`.
 To start the server, run `python main.py`. Include the flag `--debug` to run in debug mode.
 To stop the server, press `Ctrl+C`.
 
+## Test Suite
+To run the default selection of tests use `python test.py`.
+
+To run specific test(s) use `python test.py -t test1 test2 etc`.
+
+To see available tests use `-l`. To show the result of test passes include `-v`. To show help use `-h`.
+
 ## File Structure
 The general structure of the project is given below. The descriptions of noteworthy folders and files are provided.
 
-- `analysis/` - contains code for the machine learning aspects of the program
+- `analysis/` - contains code for the machine learning aspects of the program.
 - `data/` - contains data for the application.
   - `database.db` - SQLite database file.
 - `public/` - contains front-end source files.
@@ -29,8 +36,10 @@ The general structure of the project is given below. The descriptions of notewor
 - `server/` - contains back-end source files.
   - `app.py` - defines function `create_app` which creates the application.
   - `constants.py` - defines various non-sensitive constants to be used.
+- `testing/` - contains code and test data used to test various parts of the program.
 - `util/` - contains utility files (not used directly by the application).
 - `main.py` - application entry point.
+- `test.py` - test suite entry point.
 - `.env` - environment variables (this is not committed. Please ask team member's for latest version).
 
 ## APIs used
