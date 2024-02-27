@@ -8,19 +8,14 @@ import TrendUpIcon from "assets/trend-up.svg";
 import TrendDownIcon from "assets/trend-down.svg";
 import "styles/company-card.scss";
 
-export const CompanyCard = ({ company }: { company: ICompanyDetails }) => {
+interface IProps {
+  company: ICompanyDetails;
+  onClick: (companyId: number) => void;
+}
+
+export const CompanyCard = ({ company, onClick }: IProps) => {
   const [logoUrl, setLogoUrl] = useState(company.logoUrl);
   const [isFollowing, setIsFollowing] = useState(company.isFollowing);
-
-  // const [sentimentIcon, sentimentIconClass] = getIconFromCategory(company.sentimentCategory);
-  // const lastScraped = new Date(company.lastScraped);
-
-  /** Click on the company card - - show more information. */
-  const clickCard = () => {
-    // TODO
-    console.log("Click company card");
-    console.log(company);
-  };
 
   /** Click button to follow the given company. */
   const clickFollow = async (e: MouseEvent) => {
@@ -38,7 +33,7 @@ export const CompanyCard = ({ company }: { company: ICompanyDetails }) => {
    }
   };
 
-  return <div className={'company-card'} data-company-id={company.id} onClick={clickCard}>
+  return <div className={'company-card'} data-company-id={company.id} onClick={() => onClick(company.id)}>
     <img className={'company-logo'} alt={'Company logo'} src={logoUrl} onError={() => setLogoUrl(DefaultCompanyIcon)} />
     <span className={'company-name'}>{company.name}</span>
     <span className={'company-stock'}>

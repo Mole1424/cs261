@@ -1,17 +1,14 @@
-import {IUserData} from "../types/IUserData";
 import {useEffect, useState} from "react";
 import {ICompanyDetails} from "../types/ICompany";
 import CompanyCard from "./CompanyCard";
-
-import "styles/view-cards.scss";
 import axios, {AxiosResponse} from "axios";
 import {headerFormData} from "../constants";
+import {ILoadCompanyEvent} from "../types/AppEvent";
 
-export interface IProps {
-  user: IUserData;
-}
+import "styles/view-cards.scss";
+import IViewProps from "../types/IViewProps";
 
-export const ViewPopular = ({ user }: IProps) => {
+export const ViewPopular = ({ eventCallback }: IViewProps) => {
   const [companyCount, setCompanyCount] = useState(10);
   const [companies, setCompanies] = useState<ICompanyDetails[]>([]);
   const [receivedCompanyCount, setReceivedCompanyCount] = useState(-1);
@@ -38,11 +35,18 @@ export const ViewPopular = ({ user }: IProps) => {
     void populateCompanies(2 * companyCount);
   };
 
+  /** Click on a company card. */
+  const clickCompanyCard = (companyId: number) =>
+    eventCallback({
+      type: 'load-company',
+      companyId
+    } as ILoadCompanyEvent);
+
   return (
     <main className={'content-popular content-cards'}>
       <div className={'cards'}>
         {companies.map(company =>
-          <CompanyCard key={company.id} company={company} />
+          <CompanyCard key={company.id} company={company} onClick={clickCompanyCard} />
         )}
         {(receivedCompanyCount === companyCount) && (
           <p style={{ display: 'flex', justifyContent: 'center' }}>

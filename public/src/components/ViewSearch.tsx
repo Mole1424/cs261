@@ -1,10 +1,6 @@
-import {IUserData} from "../types/IUserData";
+import IViewProps from "../types/IViewProps";
 
-export interface IProps {
-  user: IUserData;
-}
-
-export const ViewSearch = ({ user }: IProps) => {
+export const ViewSearch = ({ }: IViewProps) => {
   return (
     <main className={'content-search'}>
       <span>Search</span>

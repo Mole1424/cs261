@@ -430,6 +430,7 @@ class Stock(db.Model):
         db.session.commit()
 
     def to_dict(self) -> dict:
+        from data.interface import string_to_list
         return {
             "symbol": self.symbol,
             "companyId": self.company_id,
@@ -437,10 +438,10 @@ class Stock(db.Model):
             "marketCap": self.market_cap,
             "stockPrice": self.stock_price,
             "stockChange": self.stock_change,
-            "stockDay": self.stock_change,
-            "stockWeek": self.stock_week,
-            "stockMonth": self.stock_month,
-            "stockYear": self.stock_year
+            "stockDay": string_to_list(self.stock_day, float),
+            "stockWeek": string_to_list(self.stock_week, float),
+            "stockMonth": string_to_list(self.stock_month, float),
+            "stockYear": string_to_list(self.stock_year, float)
         }
 
     @staticmethod

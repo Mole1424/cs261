@@ -1,16 +1,12 @@
 import {useEffect, useState} from "react";
 import axios, {AxiosResponse} from "axios";
-import {IUserData} from "../types/IUserData";
 import INewsArticle from "../types/INewsArticle";
 import ArticleCard from "./ArticleCard";
 
 import "styles/view-cards.scss";
+import IViewProps from "../types/IViewProps";
 
-export interface IProps {
-  user: IUserData;
-}
-
-export const ViewRecent = ({ user }: IProps) => {
+export const ViewRecent = ({ }: IViewProps) => {
   const [newsArticles, setNewsArticles] = useState<INewsArticle[]>([]);
 
   useEffect(() => {
