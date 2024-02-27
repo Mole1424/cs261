@@ -429,6 +429,25 @@ class Stock(db.Model):
         self.stock_year = stock_year
         db.session.commit()
 
+    def to_dict(self) -> dict:
+        return {
+            "symbol": self.symbol,
+            "companyId": self.company_id,
+            "exchange": self.exchange,
+            "marketCap": self.market_cap,
+            "stockPrice": self.stock_price,
+            "stockChange": self.stock_change,
+            "stockDay": self.stock_change,
+            "stockWeek": self.stock_week,
+            "stockMonth": self.stock_month,
+            "stockYear": self.stock_year
+        }
+
+    @staticmethod
+    def get_by_company(company_id: int) -> Stock | None:
+        """Get stock data for the given company."""
+        return db.session.query(Stock).filter(Stock.company_id == company_id).one_or_none()
+
 
 class UserCompany(db.Model):
     __tablename__ = "UserCompany"

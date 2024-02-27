@@ -1,7 +1,7 @@
 import {IUserData} from "../types/IUserData";
 import {useEffect, useState} from "react";
 import {ICompanyDetails} from "../types/ICompany";
-import CompanyCard, {requestUnfollowCompany} from "./CompanyCard";
+import CompanyCard from "./CompanyCard";
 
 import "styles/view-cards.scss";
 import axios, {AxiosResponse} from "axios";
