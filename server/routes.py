@@ -384,18 +384,26 @@ def create_endpoints(app: Flask) -> None:
             "data": company_details
         })
 
-    
-    @app.route('/company/popular', methods=("GET",))
+    @app.route('/company/popular', methods=("POST",))
     @ensure_auth
     def get_popular_companies(user: User):
-        """Return top 10 popular companies."""
+        """Return top `count` popular companies."""
+
+        try:
+            max_count = int(request.form['count'])
+        except (ValueError, KeyError):
+            max_count = 10
 
         company_ids = [user_company.company_id for user_company in db.session.query(UserCompany).all()]
-        most_common_companies = [elem for elem, _ in Counter(company_ids).most_common(10)]
-        popular = []
-        for companyid in most_common_companies:
-            popular.append(interface.get_company_details(companyid)[0])
-        return jsonify(list(map(lambda c: interface.get_company_details(c.id, user.id)[1], db.session.query(Company).all())))
+        most_common_companies = [elem for elem, _ in Counter(company_ids).most_common(max_count)]
+        popular = [interface.get_company_details(company_id, user.id)[1] for company_id in most_common_companies]
+        return jsonify(popular)
+
+    @app.route('/company/stock', methods=("POST",))
+    @ensure_auth
+    def get_company_stock(user: User):
+        # TODO
+        pass
 
     @app.route('/test', methods=("GET",))
     @ensure_auth
