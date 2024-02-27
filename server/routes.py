@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import Callable
 from flask import Flask, request, session, abort, jsonify
+from collections import Counter
 
 from server import constants
 from data.database import db, User, Sector, Company, UserCompany
@@ -292,8 +293,6 @@ def create_endpoints(app: Flask) -> None:
         return jsonify(list(map(UserCompany.to_dict, recommendations)))
     # Not sure if it works since db is empty
 
-    # TODO
-    # NOT TESTED AT ALL
     @app.route("/company/follow", methods=("POST",))
     @ensure_auth
     def follow_company(user: User):
@@ -308,8 +307,6 @@ def create_endpoints(app: Flask) -> None:
 
         return "", 200
 
-    # TODO
-    # NOT TESTED AT ALL
     @app.route("/company/unfollow", methods=("POST",))
     @ensure_auth
     def unfollow_company(user: User):
@@ -350,9 +347,17 @@ def create_endpoints(app: Flask) -> None:
             "data": company_details
         })
 
+    
     @app.route('/company/popular', methods=("GET",))
     @ensure_auth
     def get_popular_companies(user: User):
-        """Return popular companies."""
-        # TODO actually make this return popular companies
-        return jsonify(list(map(lambda c: interface.get_company_details(c.id, user.id)[1], db.session.query(Company).all())))
+        """Return top 10 popular companies."""
+
+        company_ids = [user_company.company_id for user_company in db.session.query(UserCompany).all()]
+        most_common = Counter(company_ids).most_common(10)
+        most_common_companies = [elem for elem, _ in most_common]
+        common = []
+        for companyid in most_common_companies:
+            common.append(interface.get_company_details(companyid)[0])
+        return jsonify(list(map(lambda c: interface.get_company_details(c.id, user.id)[1], common)))
+
