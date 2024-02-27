@@ -35,8 +35,8 @@ def is_valid_user(email: str, password: str) -> bool:
     return user.validate(password)
 
 
-def get_company_details(company_id: int, user_id: int = None) -> tuple[db.Company, dict] | None:
-    """Return (company, company_details)."""
+def get_company_details(company_id: int, user_id: int = None, load_stock=False) -> tuple[db.Company, dict] | None:
+    """Return (company, company_details). Get full stock details?"""
     company = db.db.session.query(db.Company).where(db.Company.id == company_id).one_or_none()
 
     if not company:
@@ -44,10 +44,15 @@ def get_company_details(company_id: int, user_id: int = None) -> tuple[db.Compan
 
     details = {
         **company.to_dict(),
-        "sectors": list(map(lambda x: x.sector.to_dict(), db.CompanySector.get_by_company(company.id))),
-        # TODO calculate stock delta (last day)
-        "stockDelta": 0.0,
+        "sectors": list(map(lambda x: x.sector.to_dict(), db.CompanySector.get_by_company(company.id)))
     }
+
+    # Provide full stock data?
+    stock = db.Stock.get_by_company(company_id)
+    if load_stock:
+        details["stock"] = stock.to_dict()
+    else:
+        details["stockDelta"] = stock.stock_change
 
     # If user was provided, check if they are following the company
     if user_id is not None:
@@ -61,12 +66,8 @@ def get_all_sectors() -> list[db.Sector]:
     """Get all sectors."""
     return db.db.session.query(db.Sector).order_by(asc(db.Sector.id)).all()
 
+
 def get_followed_companies(user_id: int) -> list[tuple[db.Company, dict]] | None:
-    """Return list of (company, company_details)""" 
-    output = []
-    followedids = list(map(lambda uc: uc.company_id, filter(db.UserCompany.is_following, db.UserCompany.get_by_user(user_id))))
-    for comp in followedids:
-        output.append(get_company_details(comp, user_id))
-    return output
-
-
+    """Return list of (company, company_details)"""
+    followed_ids: list[int] = list(map(lambda uc: uc.company_id, filter(db.UserCompany.is_following, db.UserCompany.get_by_user(user_id))))
+    return list(map(lambda company_id: get_company_details(company_id, user_id), followed_ids))
