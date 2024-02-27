@@ -60,3 +60,13 @@ def get_company_details(company_id: int, user_id: int = None) -> tuple[db.Compan
 def get_all_sectors() -> list[db.Sector]:
     """Get all sectors."""
     return db.db.session.query(db.Sector).order_by(asc(db.Sector.id)).all()
+
+def get_followed_companies(user_id: int) -> list[tuple[db.Company, dict]] | None:
+    """Return list of (company, company_details)""" 
+    output = []
+    followedids = list(map(lambda uc: uc.company_id, filter(db.UserCompany.is_following, db.UserCompany.get_by_user(user_id))))
+    for comp in followedids:
+        output.append(get_company_details(comp, user_id))
+    return output
+
+

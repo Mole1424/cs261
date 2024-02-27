@@ -232,6 +232,44 @@ def create_endpoints(app: Flask) -> None:
         """Return list of companies the current user is following."""
         return map(lambda uc: uc.company, filter(UserCompany.is_following, UserCompany.get_by_user(user.id)))
 
+    
+    @app.route('/user/followed_companies', methods=("POST",))
+    @ensure_auth
+    def followed_companies(user: User):
+        """
+        Accepts string with "sort_by" on how to sort:
+        "marketcapAsc"
+        "marketcapDesc"
+        "sentimentAsc"
+        "sentimentDesc"
+        defaults to alphabetical if not specified
+
+        Returns list of companies and details
+        """
+
+        sort_by = request.form.get('sort_by')
+        output = []
+        
+        for comp in interface.get_followed_companies(user.id):
+            output.append(comp[1])
+
+        if sort_by == "marketcapAsc":
+            output.sort(key=lambda x: x['marketCap'])
+        elif sort_by == "marketcapDesc":
+            output.sort(key=lambda x: x['marketCap'], reverse = True)
+        elif sort_by == "sentimentAsc":
+            output.sort(key=lambda x: x['sentiment'])
+        elif sort_by == "sentimentDesc":
+            output.sort(key=lambda x: x['sentiment'], reverse = True)
+        else:
+            output.sort(key=lambda x: x['name'])
+        return jsonify(output)
+
+
+
+
+
+
     # TODO
     @app.route("/news/recent", methods=("GET",))
     def news_recent():
@@ -321,7 +359,6 @@ def create_endpoints(app: Flask) -> None:
 
         return "", 200
 
-    # TODO
     @app.route("/company/details", methods=("POST",))
     @ensure_auth
     def get_company_details(user: User):
@@ -354,10 +391,14 @@ def create_endpoints(app: Flask) -> None:
         """Return top 10 popular companies."""
 
         company_ids = [user_company.company_id for user_company in db.session.query(UserCompany).all()]
-        most_common = Counter(company_ids).most_common(10)
-        most_common_companies = [elem for elem, _ in most_common]
-        common = []
+        most_common_companies = [elem for elem, _ in Counter(company_ids).most_common(10)]
+        popular = []
         for companyid in most_common_companies:
-            common.append(interface.get_company_details(companyid)[0])
-        return jsonify(list(map(lambda c: interface.get_company_details(c.id, user.id)[1], common)))
+            popular.append(interface.get_company_details(companyid)[0])
+        return jsonify(list(map(lambda c: interface.get_company_details(c.id, user.id)[1], db.session.query(Company).all())))
+
+    @app.route('/test', methods=("GET",))
+    @ensure_auth
+    def test(user: User):
+        return jsonify(True)
 

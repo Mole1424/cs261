@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 import werkzeug.security
 from datetime import datetime
 from analysis.analysis import sentiment_label, sentiment_score_to_text
+from sqlalchemy import and_
+from sqlalchemy import or_
 
 # Create database
 db = SQLAlchemy()
@@ -108,16 +110,15 @@ class User(db.Model):
             self.add_sector(sector.sector_id)
 
     def set_distances(self):
-        non_followed = db.session.query(Company.id).join(UserCompany, Company.id == UserCompany.company_id).where(UserCompany.user_id == self.id, UserCompany.distance != -1).all()
-        user_sectors = db.session.query(UserSector).where(UserSector.user_id == self.id)
+        non_followed = db.session.query(Company.id).outerjoin(UserCompany, and_(UserCompany.user_id == self.id, Company.id == UserCompany.company_id)).filter((UserCompany.user_id == None) | (UserCompany.distance != -1)).all()        
 
-        for company in non_followed:
-            company_sectors = db.session.query(CompanySector).filter(CompanySector.company_id == company)
-            distance = user_sectors.outerjoin(company_sectors, user_sectors.sector_id == company_sectors.sector_id).filter(user_sectors.user_id == None | company_sectors.company_id == None).count()
-            existing_record = db.session.query(UserCompany).filter_by(user_id=self.id, company_id=company).first()
+        for company in non_followed:   
+            distance = db.session.query(UserSector).outerjoin(CompanySector, and_(UserSector.user_id == self.id, CompanySector.company_id == company[0], UserSector.sector_id == CompanySector.sector_id)).filter((UserCompany.user_id == None) | (CompanySector.company_id == None)).count()
+            
+            existing_record = db.session.query(UserCompany).filter_by(user_id=self.id, company_id=company[0]).first()
             
             if not existing_record:
-                db.session.add(UserCompany(user_id=self.id, company_id=company, distance=distance))
+                db.session.add(UserCompany(user_id=self.id, company_id=company[0], distance=distance))
             else:
                 existing_record.distance = distance
             db.session.commit()
@@ -350,6 +351,7 @@ class Company(db.Model):
     def get_stocks(self) -> list[Stock]:
         """Return list of stocks that have this company."""
         return db.session.query(Stock).where(Stock.company_id == self.id).all()
+    
 
     def to_dict(self) -> dict:
         return {
