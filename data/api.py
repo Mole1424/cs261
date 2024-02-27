@@ -1,6 +1,7 @@
 import yfinance as yf
 
 from aiohttp import ClientSession
+from newspaper import Article
 from os import getenv
 
 
@@ -148,3 +149,13 @@ async def search_companies(query: str) -> list[str]:
                 ]
             else:
                 return []
+
+
+def get_article_content(url: str) -> str:
+    try:
+        article = Article(url, language="en")
+        article.download()
+        article.parse()
+        return article.text
+    except:
+        return ""
