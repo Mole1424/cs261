@@ -5,18 +5,20 @@ import data.api as api
 import data.database as db
 from sqlalchemy import asc
 from datetime import datetime
+from time import sleep
 
 
 def string_to_list(string: str, convert_fn: Callable[[str], any]) -> list:
     """Attempt to convert the input string to a list. String is in the form [x, y, z, ...]. `convert_fn`
     is called on each element."""
+
     def func(x: str):
         try:
             return convert_fn(x.strip())
         except:
             return None
 
-    return list(filter(lambda x: x is not None, map(func, string[1:-1].split(','))))
+    return list(filter(lambda x: x is not None, map(func, string[1:-1].split(","))))
 
 
 def get_user_by_id(user_id: int) -> db.User | None:
@@ -144,9 +146,26 @@ def update_company_info(company_id: int) -> None:
     news = run(api.get_news(company.name))
     news_in_db = company.get_articles()
     for i in range(len(news)):
-        setattr(news_in_db[i], "url", news[i]["url"])
-        setattr(news_in_db[i], "headline", news[i]["headline"])
-        setattr(news_in_db[i], "publisher", news[i]["publisher"])
-        setattr(news_in_db[i], "date", news[i]["date"])
-        setattr(news_in_db[i], "summary", news[i]["summary"])
+        for key, value in news[i].items():
+            if value != "":
+                setattr(news[i], key, value)
     db.db.session.commit()
+
+
+def update_loop() -> None:
+    """Staggered throughout the day, update info on a company thats followed"""
+    while True:
+        # get all companies in usercompany that are followed by a user
+        companies = [
+            db.db.session.query(db.Company)
+            .filter(db.Company.id == company.company_id)
+            .one_or_none()
+            for company in db.db.session.query(db.UserCompany)
+            .group_by(db.UserCompany.company_id)
+            .all()
+        ]
+        for company in companies:
+            update_company_info(company.id)
+            sleep(
+                86400 / len(companies)
+            )  # sleep for 24 hours divided by the number of companies
