@@ -63,10 +63,11 @@ def get_company_details(company_id: int, user_id: int = None, load_stock=False) 
 
     # Provide full stock data?
     stock = db.Stock.get_by_company(company_id)
-    if load_stock:
-        details["stock"] = stock.to_dict()
-    else:
-        details["stockDelta"] = stock.stock_change
+    if stock is not None:
+        if load_stock:
+            details["stock"] = stock.to_dict()
+        else:
+            details["stockDelta"] = stock.stock_change
 
     # If user was provided, check if they are following the company
     if user_id is not None:

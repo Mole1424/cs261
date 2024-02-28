@@ -313,7 +313,7 @@ def create_endpoints(app: Flask) -> None:
         }[]
         """
         user.set_distances()
-        recommendations = user.soft_recommend(2)
+        recommendations = user.soft_recommend(5)
         return jsonify(list(map(UserCompany.to_dict, recommendations)))
     # Not sure if it works since db is empty
 
