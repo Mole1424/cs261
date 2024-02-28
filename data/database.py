@@ -5,7 +5,7 @@ from datetime import datetime
 from analysis.analysis import sentiment_label, sentiment_score_to_text
 from sqlalchemy import and_
 from sqlalchemy import or_
-from api import get_article_content
+from data.api import get_article_content
 
 # Create database
 db = SQLAlchemy()

@@ -128,3 +128,11 @@ def update_company_info(company_id: int) -> None:
     db.db.session.commit()
 
     news = run(api.get_news(company.name))
+    news_in_db = company.get_articles()
+    for i in range(len(news)):
+        setattr(news_in_db[i], "url", news[i]["url"])
+        setattr(news_in_db[i], "headline", news[i]["headline"])
+        setattr(news_in_db[i], "publisher", news[i]["publisher"])
+        setattr(news_in_db[i], "date", news[i]["date"])
+        setattr(news_in_db[i], "summary", news[i]["summary"])
+    db.db.session.commit()
