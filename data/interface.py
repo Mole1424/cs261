@@ -112,7 +112,7 @@ def update_company_info(company_id: int) -> None:
     for symbol in company_symbols:
         stock_info = run(api.get_stock_info(symbol.symbol))
         for key, value in stock_info.items():  # update stock info
-            if value is not "":
+            if value != "":
                 setattr(symbol, key, value)
         symbol.stock_price = stock_info["stock_day"][-1]
         symbol.stock_change = stock_info["stock_day"][-1] - stock_info["stock_day"][0]
@@ -121,7 +121,7 @@ def update_company_info(company_id: int) -> None:
 
     company_info = run(api.get_company_info(company_symbols[0].symbol))
     for key, value in company_info.items():
-        if value is not "":
+        if value != "":
             setattr(company, key, value)
     company.last_scraped = datetime.now()
     company.market_cap = combined_cap

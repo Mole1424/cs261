@@ -87,18 +87,20 @@ class User(db.Model):
             .all()
         )
 
-    def add_company(self, company_id: int) -> Company:
+    def add_company(self, company_id: int) -> None:
         """Add a company to user."""
-        if not (
-            db.session.query(UserCompany)
-            .where(UserCompany.user_id == self.id, UserCompany.company_id == company_id)
-            .first()
-        ):
-            db.session.add(
-                UserCompany(user_id=self.id, company_id=company_id, distance=-1)
-            )
+
+        current = db.session.query(UserCompany).where(UserCompany.user_id == self.id, UserCompany.company_id == company_id).first()
+        
+        if current:
+            db.session.query(UserCompany).where(UserCompany.user_id == self.id, UserCompany.company_id == company_id).delete()
+            db.session.add(UserCompany(user_id=self.id, company_id=company_id, distance=-1))
             db.session.commit()
-        return db.session.query(Company).where(Company.id == company_id).first()
+        else:
+            db.session.add(UserCompany(user_id=self.id, company_id=company_id, distance=-1))
+            db.session.commit()
+
+
 
     def remove_company(self, company_id: int) -> None:
         """Remove a company from user."""

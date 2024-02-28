@@ -371,7 +371,7 @@ def create_endpoints(app: Flask) -> None:
             "data": company_details
         })
 
-    @app.route('/company/popular', methods=("POST",))
+    @app.route('/company/popular', methods=("GET",))
     @ensure_auth
     def get_popular_companies(user: User):
         """Return top `count` popular companies."""
@@ -396,4 +396,5 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def test(user: User):
         return jsonify(True)
+
 
