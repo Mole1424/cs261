@@ -1,0 +1,16 @@
+@use "variables.scss" as V;
+
+.stock-information {
+  // TODO
+
+  .stock-graph-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    > canvas {
+      background-color: V.$primary-fg;
+      width: 80% !important;
+    }
+  }
+}

@@ -1,8 +1,22 @@
 from asyncio import run
+from typing import Callable
+
 import data.api as api
 import data.database as db
 from sqlalchemy import asc
 from datetime import datetime
+
+
+def string_to_list(string: str, convert_fn: Callable[[str], any]) -> list:
+    """Attempt to convert the input string to a list. String is in the form [x, y, z, ...]. `convert_fn`
+    is called on each element."""
+    def func(x: str):
+        try:
+            return convert_fn(x.strip())
+        except:
+            return None
+
+    return list(filter(lambda x: x is not None, map(func, string[1:-1].split(','))))
 
 
 def get_user_by_id(user_id: int) -> db.User | None:

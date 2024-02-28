@@ -5,7 +5,7 @@ import FaceNeutralIcon from "assets/face-neutral.svg";
 import FaceSadIcon from "assets/face-sad.svg";
 import FaceAngryIcon from "assets/face-angry.svg";
 
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
+export const formatDateTime = new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
     day: 'numeric',
     month: 'long',
@@ -13,9 +13,14 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
-  });
+  }).format;
 
-export const formatDate = dateFormatter.format;
+export const formatDate = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format;
 
 /** Given the sentiment category, return the appropriate SVG icon string and class */
 export function getIconFromCategory(category: SentimentCategory): [string, string] {
@@ -31,4 +36,16 @@ export function getIconFromCategory(category: SentimentCategory): [string, strin
     case "Very Negative":
       return [FaceAngryIcon, "style-red"];
   }
+}
+
+export const formatNumber = (n: number) => n.toLocaleString("en-GB");
+
+/** Capitalise the first character, lowercase the rest. */
+export const capitalise = (s: string) => s[0].toUpperCase() + s.substring(1);
+
+/** Create list of dates, with given start and end dates, spanning over `n` entries. Assume `end > start`.
+ * Returned array: `[start, ..., end]`. */
+export function createDateArray(start: Date, end: Date, count: number) {
+  const delta = (end.valueOf() - start.valueOf()) / count;
+  return Array.from({ length: count }, (_, i) => new Date(start.valueOf() + delta * i));
 }

@@ -66,8 +66,12 @@ export const CompanyDetails = ({ companyId }: IProps) => {
           </>
         }
         <span className={'company-stock-change'}>
-          {company.stock.stockChange == 0 ? '' : <img alt={'Stock trend icon'} src={company.stock.stockChange < 0 ? TrendDownIcon : TrendUpIcon} className={'icon style-' + (company.stock.stockChange < 0 ? 'red' : 'green')} />}
-          <span>{Math.abs(company.stock.stockChange).toFixed(1)}%</span>
+          {company.stock
+            ? <>
+              {company.stock.stockChange == 0 ? '' : <img alt={'Stock trend icon'} src={company.stock.stockChange < 0 ? TrendDownIcon : TrendUpIcon} className={'icon style-' + (company.stock.stockChange < 0 ? 'red' : 'green')} />}
+              <span>{Math.abs(company.stock.stockChange).toFixed(1)}%</span>
+            </>
+            : 'Stock Data Unavailable'}
         </span>
         <span className={'company-sentiment'}>
           <img src={sentimentIcon} alt={company.sentimentCategory} className={'icon ' + sentimentIconClass} />
@@ -77,7 +81,7 @@ export const CompanyDetails = ({ companyId }: IProps) => {
         <img className={'company-logo'} alt={'Company logo'} src={logoUrl} onError={() => setLogoUrl(DefaultCompanyIcon)} />
         <span className={'company-description'}>{company.description}</span>
 
-        <StockInformation stock={company.stock} />
+        {company.stock && <StockInformation company={company} stock={company.stock} />}
       </span>
     </main>;
   } else {

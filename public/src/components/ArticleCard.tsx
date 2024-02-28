@@ -1,5 +1,5 @@
 import INewsArticle from "../types/INewsArticle";
-import {formatDate, getIconFromCategory} from "../util";
+import {formatDateTime, getIconFromCategory} from "../util";
 
 import LinkIcon from "assets/link.svg";
 import "styles/article-card.scss";
@@ -21,7 +21,7 @@ export const ArticleCard = ({ article }: { article: INewsArticle }) => {
       </a>
     </span>
     <span className={'article-about'}>
-      Published by {article.publisher} on {formatDate(published)}
+      Published by {article.publisher} on {formatDateTime(published)}
     </span>
     <span className={'article-overview'}>
       {article.overview}
