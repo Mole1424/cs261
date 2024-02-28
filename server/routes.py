@@ -317,7 +317,7 @@ def create_endpoints(app: Flask) -> None:
         return jsonify(list(map(UserCompany.to_dict, recommendations)))
     # Not sure if it works since db is empty
 
-    @app.route("/company/follow", methods=("GET",))
+    @app.route("/company/follow", methods=("POST",))
     @ensure_auth
     def follow_company(user: User):
         """Accepts: 'id' of company to follow."""
@@ -371,7 +371,7 @@ def create_endpoints(app: Flask) -> None:
             "data": company_details
         })
 
-    @app.route('/company/popular', methods=("GET",))
+    @app.route('/company/popular', methods=("POST",))
     @ensure_auth
     def get_popular_companies(user: User):
         """Return top `count` popular companies."""
