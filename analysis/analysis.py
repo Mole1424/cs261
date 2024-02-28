@@ -59,7 +59,7 @@ def recommend_hard_train(feedback):
     data = {'user_id': feedback[0], 'stock_id': feedback[1], 'following': feedback[2]}
     df = pd.DataFrame(data)
 
-    sparse_data = sp.csr_matrix((df['following'].astype(float), (df['UserID'], df['StockID'])))
+    sparse_data = sp.csr_matrix((df['following'].astype(float), (df['user_id'], df['stock_id'])))
 
     # train_data, test_data = train_test_split(sparse_data, test_size=0.2, random_state=15)
 
@@ -82,7 +82,7 @@ def recommend_hard_train(feedback):
     # still need to store the model
     return model
 
-    # Recommend items for a specific user
+# Recommend items for a specific user
 def recommend_hard(model, userids, feedback, k):
     data = {'UserID': feedback[0], 'StockID': feedback[1], 'following': feedback[2]}
     df = pd.DataFrame(data)

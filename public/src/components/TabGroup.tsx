@@ -15,6 +15,7 @@ export interface ITab {
 }
 
 export const TabGroup = ({ tabs, selected: defaultTabIndex }: IProps) => {
+  // TODO select bug
   const [selected, setSelected] = useState(defaultTabIndex ?? -1);
 
   /** Handle the click of the tab at the given index */

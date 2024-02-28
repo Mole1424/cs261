@@ -4,21 +4,17 @@ import React, {useState} from "react";
 import BellLogo from "assets/bell.svg";
 import RingingBellLogo from "assets/bell-ringing.svg";
 
-export interface IProps {
+interface IProps {
   user: IUserData;
+  onClick: () => void;
 }
 
-export const NotificationBell = ({ user }: IProps) => {
+export const NotificationBell = ({ onClick }: IProps) => {
   const [receivedNotification, setReceivedNotification] = useState(true);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(1);
 
-  const clickBellIcon = async () => {
-    // TODO
-    console.log("Click bell icon");
-  };
-
   return (
-    <span onClick={clickBellIcon}>
+    <span onClick={onClick}>
       <img
         src={receivedNotification ? RingingBellLogo : BellLogo}
         alt={'Bell icon'}

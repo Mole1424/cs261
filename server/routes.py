@@ -226,49 +226,35 @@ def create_endpoints(app: Flask) -> None:
 
         return jsonify({"error": False, "user": user.to_dict()})
 
-    @app.route('/user/following', methods=("GET",))
-    @ensure_auth
-    def user_get_following(user: User):
-        """Return list of companies the current user is following."""
-        return map(lambda uc: uc.company, filter(UserCompany.is_following, UserCompany.get_by_user(user.id)))
-
-    
-    @app.route('/user/followed_companies', methods=("POST",))
+    @app.route('/company/following', methods=("POST",))
     @ensure_auth
     def followed_companies(user: User):
         """
         Accepts string with "sort_by" on how to sort:
-        "marketcapAsc"
-        "marketcapDesc"
+        "marketCapAsc"
+        "marketCapDesc"
         "sentimentAsc"
         "sentimentDesc"
-        defaults to alphabetical if not specified
+        defaults to alphabetical if not specified.
 
-        Returns list of companies and details
+        Returns list of companies and details.
         """
 
         sort_by = request.form.get('sort_by')
-        output = []
-        
-        for comp in interface.get_followed_companies(user.id):
-            output.append(comp[1])
+        companies = [obj for _, obj in interface.get_followed_companies(user.id)]
 
-        if sort_by == "marketcapAsc":
-            output.sort(key=lambda x: x['marketCap'])
-        elif sort_by == "marketcapDesc":
-            output.sort(key=lambda x: x['marketCap'], reverse = True)
+        if sort_by == "marketCapAsc":
+            companies.sort(key=lambda x: x['marketCap'])
+        elif sort_by == "marketCapDesc":
+            companies.sort(key=lambda x: x['marketCap'], reverse=True)
         elif sort_by == "sentimentAsc":
-            output.sort(key=lambda x: x['sentiment'])
+            companies.sort(key=lambda x: x['sentiment'])
         elif sort_by == "sentimentDesc":
-            output.sort(key=lambda x: x['sentiment'], reverse = True)
+            companies.sort(key=lambda x: x['sentiment'], reverse=True)
         else:
-            output.sort(key=lambda x: x['name'])
-        return jsonify(output)
+            companies.sort(key=lambda x: x['name'])
 
-
-
-
-
+        return jsonify(companies)
 
     # TODO
     @app.route("/news/recent", methods=("GET",))
@@ -363,7 +349,7 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def get_company_details(user: User):
         """
-        Accepts: id/name/unique-identifier of company.
+        Accepts: id/name/unique-identifier of company. Also, 'loadStock' flag.
         """
         try:
             company_id = int(request.form['id'])
@@ -371,7 +357,8 @@ def create_endpoints(app: Flask) -> None:
             abort(400)
             return
 
-        company, company_details = interface.get_company_details(company_id, user.id)
+        load_stock = get_form_or_default("loadStock", "false") == "true"
+        company, company_details = interface.get_company_details(company_id, user.id, load_stock)
 
         if not company:
             return jsonify({
@@ -384,18 +371,26 @@ def create_endpoints(app: Flask) -> None:
             "data": company_details
         })
 
-    
-    @app.route('/company/popular', methods=("GET",))
+    @app.route('/company/popular', methods=("POST",))
     @ensure_auth
     def get_popular_companies(user: User):
-        """Return top 10 popular companies."""
+        """Return top `count` popular companies."""
+
+        try:
+            max_count = int(request.form['count'])
+        except (ValueError, KeyError):
+            max_count = 10
 
         company_ids = [user_company.company_id for user_company in db.session.query(UserCompany).all()]
-        most_common_companies = [elem for elem, _ in Counter(company_ids).most_common(10)]
-        popular = []
-        for companyid in most_common_companies:
-            popular.append(interface.get_company_details(companyid)[0])
-        return jsonify(list(map(lambda c: interface.get_company_details(c.id, user.id)[1], db.session.query(Company).all())))
+        most_common_companies = [elem for elem, _ in Counter(company_ids).most_common(max_count)]
+        popular = [interface.get_company_details(company_id, user.id)[1] for company_id in most_common_companies]
+        return jsonify(popular)
+
+    @app.route('/company/stock', methods=("POST",))
+    @ensure_auth
+    def get_company_stock(user: User):
+        # TODO
+        pass
 
     @app.route('/test', methods=("GET",))
     @ensure_auth

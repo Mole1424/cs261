@@ -1,15 +1,19 @@
 import yfinance as yf
 
 from aiohttp import ClientSession
+from newspaper import Article
 from os import getenv
 
 
 async def get_company_info(symbol: str) -> dict:
+    """Get company info given a stock symbol.
+    Returns a dictionary with the company's name, website, description, location, market cap, and CEO.
+    If the company is not found, returns an empty dictionary."""
     try:
         # first try to get the info from yfinance
         info = yf.Ticker(symbol).info
         return {
-            "name": info.get("longName", ""),
+            "name": info.get("longName", ""),  # use info.get() to avoid key errors
             "url": info.get("website", ""),
             "description": info.get("longBusinessSummary", ""),
             "location": f"{info.get('address1', '')} {info.get('city', '')} {info.get('state', '')} {info.get('country', '')}",
@@ -38,6 +42,9 @@ async def get_company_info(symbol: str) -> dict:
 
 
 async def get_stock_info(symbol: str) -> dict:
+    """Get stock info given a stock symbol.
+    Returns a dictionary with the stock's price, open, high, low, volume, and previous close.
+    If the stock is not found, returns an empty dictionary."""
     try:
         # first try to get the info from yfinance
         # TODO: multithreading/async?
@@ -66,6 +73,7 @@ async def get_stock_info(symbol: str) -> dict:
 
 
 async def get_stock_period(symbol: str, period: str, num: int, interval="") -> list:
+    """Get stock info for a given period."""
     # ping alphavantage for stock data
     url = (
         f"https://www.alphavantage.co/query?function={period}&symbol={symbol}&interval={interval}&apikey={getenv('ALPHAVANTAGE_API_KEY')}"
@@ -91,9 +99,9 @@ async def get_stock_period(symbol: str, period: str, num: int, interval="") -> l
 
 
 async def get_news(name: str) -> list[dict]:
-    with open("news_whitelist.csv", "r") as f:
+    """Get news articles for a given company name."""
+    with open("news_whitelist.csv", "r") as f:  # read the news sources whitelist
         whitelist = "".join([line.strip() for line in f.readlines()])
-    print(whitelist)
     articles = []
     try:
         async with ClientSession(
@@ -115,6 +123,7 @@ async def get_news(name: str) -> list[dict]:
                             }
                         )
     except:
+        # if cant use newscatcher, use newsapi
         num_articles = 50 - len(articles)
         async with ClientSession() as session:
             url = f'https://newsapi.org/v2/everything?q={name}&language=en&domains={whitelist}&pageSize={num_articles}&apiKey={getenv("NEWSAPI_API_KEY")}'
@@ -135,6 +144,7 @@ async def get_news(name: str) -> list[dict]:
 
 
 async def search_companies(query: str) -> list[str]:
+    """Search for companies given a query."""
     async with ClientSession() as session:
         async with session.get(
             f"https://query2.finance.yahoo.com/v1/finance/search?q={query}"
@@ -148,3 +158,14 @@ async def search_companies(query: str) -> list[str]:
                 ]
             else:
                 return []
+
+
+def get_article_content(url: str) -> str:
+    # get the text of the article from url
+    try:
+        article = Article(url, language="en")
+        article.download()
+        article.parse()
+        return article.text
+    except:
+        return ""

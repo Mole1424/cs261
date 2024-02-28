@@ -1,14 +1,9 @@
-import {IUserData} from "../types/IUserData";
 import {useEffect, useState} from "react";
 import axios, {AxiosResponse} from "axios";
 import {IUserCompany} from "../types/ICompany";
+import IViewProps from "../types/IViewProps";
 
-export interface IProps {
-  user: IUserData;
-}
-
-export const ViewForYou = ({ user }: IProps) => {
-
+export const ViewForYou = ({ user }: IViewProps) => {
   const [companies, setCompanies] = useState<IUserCompany[]>([]);
 
   useEffect(() => {
