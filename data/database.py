@@ -143,7 +143,7 @@ class User(db.Model):
                     ),
                 )
                 .filter(
-                    (UserCompany.user_id == None) | (CompanySector.company_id == None)
+                    (UserSector.user_id == None) | (CompanySector.company_id == None)
                 )
                 .count()
             )
