@@ -93,8 +93,7 @@ class User(db.Model):
         current = db.session.query(UserCompany).where(UserCompany.user_id == self.id, UserCompany.company_id == company_id).first()
         
         if current:
-            db.session.query(UserCompany).where(UserCompany.user_id == self.id, UserCompany.company_id == company_id).delete()
-            db.session.add(UserCompany(user_id=self.id, company_id=company_id, distance=-1))
+            db.session.query(UserCompany).filter_by(user_id=self.id, company_id=company_id).update({'distance': -1})
             db.session.commit()
         else:
             db.session.add(UserCompany(user_id=self.id, company_id=company_id, distance=-1))
