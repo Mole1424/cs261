@@ -17,7 +17,7 @@ async def get_company_info(symbol: str) -> dict:
             "url": info.get("website", ""),
             "description": info.get("longBusinessSummary", ""),
             "location": f"{info.get('address1', '')} {info.get('city', '')} {info.get('state', '')} {info.get('country', '')}",
-            "marketCap": info.get("marketCap", ""),
+            "market_cap": info.get("marketCap", ""),
             "ceo": info.get("companyOfficers", "")[0].get("name", ""),
         }
 
@@ -34,7 +34,7 @@ async def get_company_info(symbol: str) -> dict:
                         "url": "",
                         "description": data.get("Description", ""),
                         "location": data.get("Address", ""),
-                        "marketCap": data.get("MarketCapitalization", ""),
+                        "market_cap": data.get("MarketCapitalization", ""),
                         "ceo": "",
                     }
                 else:
@@ -60,6 +60,7 @@ async def get_stock_info(symbol: str) -> dict:
             "stock_year": ticker.history(period="1y", interval="1wk")[
                 "Close"
             ].to_list(),
+            "market_cap": ticker.info.get("marketCap", ""),
         }
     except:
         return {
@@ -69,6 +70,7 @@ async def get_stock_info(symbol: str) -> dict:
             "stock_week": await get_stock_period(symbol, "TIME_SERIES_DAILY", 7),
             "stock_month": await get_stock_period(symbol, "TIME_SERIES_DAILY", 30),
             "stock_year": await get_stock_period(symbol, "TIME_SERIES_WEEKLY", 52),
+            "market_cap": await get_market_cap(symbol),
         }
 
 
@@ -96,6 +98,18 @@ async def get_stock_period(symbol: str, period: str, num: int, interval="") -> l
                 )
             else:
                 return []
+
+
+async def get_market_cap(symbol: str) -> float:
+    async with ClientSession() as session:
+        async with session.get(
+            f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={getenv('ALPHAVANTAGE_API_KEY')}"
+        ) as response:
+            if response.status == 200:
+                data = await response.json()
+                return data.get("MarketCapitalization", "")
+            else:
+                return 0
 
 
 async def get_news(name: str) -> list[dict]:
@@ -161,7 +175,7 @@ async def search_companies(query: str) -> list[str]:
 
 
 def get_article_content(url: str) -> str:
-    # get the text of the article from url
+    """Get the text of an article given its url."""
     try:
         article = Article(url, language="en")
         article.download()
