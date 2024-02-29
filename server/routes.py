@@ -385,9 +385,37 @@ def create_endpoints(app: Flask) -> None:
         # TODO
         pass
 
+    @app.route('/company/search', methods=("POST",))
+    @ensure_auth
+    def company_search(user: User):
+        
+        """Accepts 'ceo':string, 'companyName', 'sectors': list, 'sentimentRange': list[2], 'marketCapRange': list[2], 'stockPriceRange': list[2], 'stockChange': boolean """
+        ceo = str(request.form.get('ceo'))
+        companyName = str(request.form.get('companyName'))
+        sectors = [str(x) for x in request.form.getlist('sectors')]
+        sentimentRange = []
+        #marketCapRange = request.form.getlist('marketCapRange')
+        #stockPriceRange = request.form.getlist('stockPriceRange')
+        #stockChange = request.form.get('stockChange')
+        try:
+            sentimentRange = [float(x) for x in request.form.getlist('sentimentRange')]
+        except:
+            pass
+        #try:
+        #    stockChange = bool(stockChange)
+        #except:
+        #    stockChange = None
+        return jsonify(interface.search_companies(ceo, companyName, sectors, sentimentRange, user.id))
+
+
+
+
+
     @app.route('/test', methods=("GET",))
     @ensure_auth
     def test(user: User):
+        temp = interface.search_companies('', 'g', [1,2,3,4,5], [0, 1], user.id)
+        print(temp)
         return jsonify(True)
 
 
