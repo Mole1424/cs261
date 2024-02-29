@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 
 import "styles/tabs.scss"
 
@@ -15,8 +15,11 @@ export interface ITab {
 }
 
 export const TabGroup = ({ tabs, selected: defaultTabIndex }: IProps) => {
-  // TODO select bug
   const [selected, setSelected] = useState(defaultTabIndex ?? -1);
+
+  useEffect(() => {
+    setSelected(defaultTabIndex ?? -1);
+  }, [defaultTabIndex]);
 
   /** Handle the click of the tab at the given index */
   const handleClick = async (index: number) => {

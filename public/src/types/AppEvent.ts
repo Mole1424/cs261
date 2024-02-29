@@ -8,3 +8,15 @@ export interface ILoadCompanyEvent extends ICbEvent {
 }
 
 export type EventCallback = (event: ICbEvent) => void;
+
+/** Parse hash string to event */
+export function parseStringToEvent(str: string): ICbEvent | null {
+  if (str.startsWith('company/')) {
+    return {
+      type: 'load-company',
+      companyId: parseInt(str.substring(8))
+    } as ILoadCompanyEvent;
+  } else {
+    return null;
+  }
+}

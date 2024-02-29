@@ -16,17 +16,23 @@ import NotificationBell from "./NotificationBell";
 interface IProps {
   user: IUserData;
   onLogout: () => void;
-  defaultTab?: string;
+  defaultTab?: string; // Default tab to load in to.
+  initialEvent?: ICbEvent; // Event to trigger immediately. Occurs _after_ defaultTab.
 }
 
-export const Interface = ({ user, onLogout, defaultTab }: IProps) => {
+export const Main = ({ user, onLogout, defaultTab, initialEvent }: IProps) => {
   const [viewContent, setViewContent] = useState<React.JSX.Element | null>(null);
   const [selectedTab, setSelectedTab] = useState(-1);
   const cachedComponents: { [key: string]: React.JSX.Element } = {};
 
   useEffect(() => {
-    // Load default tab content?
-    if (defaultTab) {
+    // Initial event?
+    if (initialEvent) {
+      handleCallback(initialEvent);
+    }
+
+    // Load default tab content? (event takes precedence)
+    else if (defaultTab) {
       const defaultIndex = tabs.findIndex(tab => tab.label === defaultTab);
       setSelectedTab(defaultIndex);
 
@@ -35,7 +41,7 @@ export const Interface = ({ user, onLogout, defaultTab }: IProps) => {
         setCachedContent(tab.label, tab.generateContent);
       }
     }
-  }, []);
+  }, [initialEvent, defaultTab]);
 
   /** Click the user's name */
   const setCachedContent = (key: string, generator: () => React.JSX.Element) => {
@@ -153,4 +159,4 @@ export const Interface = ({ user, onLogout, defaultTab }: IProps) => {
   );
 };
 
-export default Interface;
+export default Main;
