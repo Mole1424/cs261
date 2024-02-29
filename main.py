@@ -9,13 +9,13 @@ if __name__ == "__main__":
     options = argv[1:]
 
     # Load .env file into environment
-    load_dotenv()
+    load_dotenv("env")
 
     # Create and launch Flask application
     app = create_app()
 
-    # # Start the update loop DONT UNCOMMENT THIS AS ITS UNTESTED
-    # update_thread = threading.Thread(target=update_loop)
+    # Start the update loop DONT UNCOMMENT THIS AS ITS UNTESTED
+    # update_thread = threading.Thread(target=update_loop, args=(app,))
     # update_thread.start()
 
     app.run(

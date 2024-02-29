@@ -2,6 +2,7 @@ import yfinance as yf
 
 from aiohttp import ClientSession
 from newspaper import Article
+from datetime import datetime
 from os import getenv
 
 
@@ -114,9 +115,12 @@ async def get_market_cap(symbol: str) -> float:
 
 async def get_news(name: str) -> list[dict]:
     """Get news articles for a given company name."""
-    with open("news_whitelist.csv", "r") as f:  # read the news sources whitelist
+    with open("data/news_whitelist.csv", "r") as f:  # read the news sources whitelist
         whitelist = "".join([line.strip() for line in f.readlines()])
+
     articles = []
+    print("newscatcher: ", getenv("NEWSCATCHER_API_KEY"))
+    print("newsapi: ", getenv("NEWS_API_KEY"))
     try:
         async with ClientSession(
             headers={"x-api-key": getenv("NEWSCATCHER_API_KEY")}
@@ -132,7 +136,7 @@ async def get_news(name: str) -> list[dict]:
                                 "url": article["link"],
                                 "headline": article["title"],
                                 "publisher": article["clean_url"],
-                                "date": article["published_date"],
+                                "date": datetime.strptime(article["published_date"], "%Y-%m-%dT%H:%M:%SZ")
                                 "summary": article["excerpt"],
                             }
                         )
@@ -150,7 +154,7 @@ async def get_news(name: str) -> list[dict]:
                                 "url": article["url"],
                                 "headline": article["title"],
                                 "publisher": article["source"]["name"],
-                                "date": article["publishedAt"],
+                                "date": datetime.strptime(article["publishedAt"], "%Y-%m-%d %H:%M:%S"),
                                 "summary": "",
                             }
                         )
