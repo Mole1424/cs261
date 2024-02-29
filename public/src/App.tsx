@@ -26,14 +26,13 @@ export const App = ({ initialUser, defaultTab }: IProps) => {
   // Load event from hash?
   useEffect(() => {
     const hash = location.hash.substring(1);
+    location.hash = "";
 
     if (hash) {
       const event = parseStringToEvent(hash);
 
       if (event) {
-        console.log(`Hash event:`, event);
         setEvent(event);
-        location.hash = "";
       } else {
         console.log(`Invalid hash: '${hash}'`);
       }

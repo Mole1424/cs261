@@ -4,7 +4,7 @@ from flask import Flask, request, session, abort, jsonify
 from collections import Counter
 
 from server import constants
-from data.database import db, User, Sector, Company, UserCompany
+from data.database import db, User, Sector, Company, UserCompany, Article
 import data.interface as interface
 from data.database import db, User, Sector
 
@@ -258,47 +258,29 @@ def create_endpoints(app: Flask) -> None:
 
         return jsonify(companies)
 
+    @app.route("/news/article", methods=("POST",))
+    def new_article():
+        """Get details of a news article. Accepts `id` of article."""
+        try:
+            article_id = int(request.form['id'])
+        except (ValueError, KeyError):
+            abort(400)
+            return
+
+        article = Article.get_by_id(article_id)
+
+        return jsonify({
+            'error': True,
+            'articleId': article_id
+        } if article is None else {
+            'error': False,
+            'data': article.to_dict()
+        })
+
     # TODO actually get recent articles
     @app.route("/news/recent", methods=("GET",))
     def news_recent():
-        """
-        Return JSON in the form:
-        {
-          id: number;
-          title: string;
-          publisher: string;
-          published: string;
-          overview: string;
-          sentimentScore: number;
-          sentimentCategory: string
-          url: string;
-        }[]
-        """
-
-        return jsonify(
-            [
-                {
-                    "id": 1,
-                    "title": "Man Eats Apple",
-                    "publisher": "BBC",
-                    "published": "2020-05-21 12:00",
-                    "overview": "Man eats an apple, says it was the best apple he'd ever eaten.",
-                    "sentimentScore": 0.9,
-                    "url": "https://www.bbc.co.uk",
-                    "sentimentCategory": "Very Positive",
-                },
-                {
-                    "id": 2,
-                    "title": "CEO Fired After Two Hours",
-                    "publisher": "The Guardian",
-                    "published": "2023-06-19 14:30",
-                    "overview": "CEO so terrible he was fired after just two hours on the job.",
-                    "sentimentScore": -0.66,
-                    "url": "https://www.theguardian.com/uk",
-                    "sentimentCategory": "Very Negative",
-                },
-            ]
-        )
+        return jsonify(list(map(Article.to_dict, db.session.query(Article).all())))
 
     @app.route("/user/for-you", methods=("POST",))
     @ensure_auth

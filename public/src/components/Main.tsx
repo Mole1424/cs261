@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {IUserData} from "../types/IUserData";
 import {requestLogout} from "./Login";
-import {ICbEvent, ILoadCompanyEvent} from "../types/AppEvent";
+import {ICbEvent, ILoadArticleEvent, ILoadCompanyEvent} from "../types/AppEvent";
 import CompanyDetails from "./CompanyDetails";
 import UserProfile from "./UserProfile";
 import TabGroup, {ITab} from "./TabGroup";
@@ -12,6 +12,7 @@ import ViewPopular from "./ViewPopular";
 import ViewSearch from "./ViewSearch";
 import {APP_NAME} from "../index";
 import NotificationBell from "./NotificationBell";
+import ArticleCard, {requestArticle} from "./ArticleCard";
 
 interface IProps {
   user: IUserData;
@@ -55,12 +56,28 @@ export const Main = ({ user, onLogout, defaultTab, initialEvent }: IProps) => {
   };
 
   /** Callback: send event to load dynamic content. */
-  const handleCallback = (event: ICbEvent) => {
+  const handleCallback = async (event: ICbEvent) => {
     switch (event.type) {
       case 'load-company':
         const companyId = (event as ILoadCompanyEvent).companyId;
         setViewContent(<CompanyDetails companyId={companyId} />);
         setSelectedTab(-1);
+        break;
+      case 'load-article':
+        const articleId = (event as ILoadArticleEvent).articleId;
+        const response = await requestArticle(articleId);
+
+        if (response && !response.error) {
+          setViewContent(<main className={'content-cards'}>
+            <div className={'cards'}>
+              <ArticleCard article={response.data!} />
+            </div>
+          </main>);
+          setSelectedTab(-1);
+        } else {
+          console.log("Failed to display article " + articleId);
+        }
+
         break;
       default:
         console.log(`Event: unknown event type ${event.type}`);

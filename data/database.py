@@ -593,9 +593,10 @@ class Article(db.Model):
             "url": self.url,
             "headline": self.headline,
             "publisher": self.publisher,
-            "date": self.date,
+            "published": self.date,
             "summary": self.summary,
-            "sentiment": self.sentiment,
+            "sentimentCategory": sentiment_score_to_text(self.sentiment),
+            "sentimentScore": self.sentiment,
         }
 
     def __repr__(self) -> str:
@@ -628,6 +629,10 @@ class Article(db.Model):
     def get_content(self) -> str:
         """Return the content of the article."""
         return get_article_content(self.url)
+
+    @staticmethod
+    def get_by_id(article_id: int) -> Article | None:
+        return db.session.query(Article).filter(Article.id == article_id).first()
 
 
 class Story(db.Model):

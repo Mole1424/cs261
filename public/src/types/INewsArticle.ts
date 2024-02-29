@@ -2,10 +2,10 @@ import SentimentCategory from "./SentimentCategory";
 
 export default interface INewsArticle {
   id: number;
-  title: string;
+  headline: string;
   publisher: string;
   published: string; // Date in format 'dd-MM-yyyy hh:mm'
-  overview: string;
+  summary: string;
   sentimentScore: number;
   sentimentCategory: SentimentCategory;
   url: string;
