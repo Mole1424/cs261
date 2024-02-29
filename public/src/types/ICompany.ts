@@ -34,3 +34,6 @@ export interface IUserCompany {
   distance: number;
 }
 
+export interface IUserCompanyDetails extends IUserCompany {
+  company: ICompanyDetails;
+}

@@ -6,14 +6,14 @@ from collections import Counter
 from server import constants
 from data.database import db, User, Sector, Company, UserCompany
 import data.interface as interface
-from data.database import db, User, Sector, Company, Article
+from data.database import db, User, Sector
 
 USER_ID = "user_id"
 
 
 def is_logged_in() -> bool:
     """Check if the current user is logged in."""
-    return USER_ID in session if constants.USER_DEFAULT is None else True
+    return USER_ID in session and session[USER_ID] is not None if constants.USER_DEFAULT is None else True
 
 
 def get_user() -> User | None:
@@ -82,6 +82,8 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def auth_get(user: User):
         """Get the current user."""
+        print("AUTH_GET")
+        print(user)
         return jsonify(user.to_dict()), 200
 
     @app.route("/user/delete", methods=("POST",))
@@ -256,7 +258,7 @@ def create_endpoints(app: Flask) -> None:
 
         return jsonify(companies)
 
-    # TODO
+    # TODO actually get recent articles
     @app.route("/news/recent", methods=("GET",))
     def news_recent():
         """
@@ -297,25 +299,34 @@ def create_endpoints(app: Flask) -> None:
                 },
             ]
         )
-        # Spoof data
-        # abort(501)
-    
-        # TODO
-    @app.route("/user/for_you", methods=("GET",))
+
+    @app.route("/user/for-you", methods=("POST",))
     @ensure_auth
     def recommend(user: User):
         """
+        Accepts argument `count`.
         Return JSON in the form:
         {
-          user_id: number;
-          company_id: number;
+          userId: number;
+          companyId: number;
           distance: number;
+          company: Company;
         }[]
         """
+        def to_dict(uc: UserCompany) -> dict:
+            return {
+                **uc.to_dict(),
+                'company': interface.get_company_details(uc.company_id, user.id)[1]
+            }
+
+        try:
+            count = int(request.form['count'])
+        except (ValueError, KeyError):
+            count = 5
+
         user.set_distances()
-        recommendations = user.soft_recommend(5)
-        return jsonify(list(map(UserCompany.to_dict, recommendations)))
-    # Not sure if it works since db is empty
+        recommendations = user.soft_recommend(count)
+        return jsonify(sorted(list(map(to_dict, recommendations)), key=lambda d: d['company']['name']))
 
     @app.route("/company/follow", methods=("POST",))
     @ensure_auth

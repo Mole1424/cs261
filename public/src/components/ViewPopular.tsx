@@ -4,9 +4,9 @@ import CompanyCard from "./CompanyCard";
 import axios, {AxiosResponse} from "axios";
 import {headerFormData} from "../constants";
 import {ILoadCompanyEvent} from "../types/AppEvent";
+import IViewProps from "../types/IViewProps";
 
 import "styles/view-cards.scss";
-import IViewProps from "../types/IViewProps";
 
 export const ViewPopular = ({ eventCallback }: IViewProps) => {
   const [companyCount, setCompanyCount] = useState(10);

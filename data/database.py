@@ -509,6 +509,9 @@ class UserCompany(db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
     distance = db.Column(db.Integer)
 
+    company = db.relationship("Company", backref="followed_companies", lazy=True)
+    user = db.relationship("User", backref="followed_users", lazy=True)
+
     def __init__(self, user_id: int, company_id: int, distance: int):
         self.user_id = user_id
         self.company_id = company_id

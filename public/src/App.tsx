@@ -24,7 +24,7 @@ export const App = ({ initialUser, defaultTab }: IProps) => {
 
   // TODO set `defaultTab` to 'recent'
   return user
-    ? <Interface user={user} onLogout={() => setUser(null)} defaultTab={'Following'} />
+    ? <Interface user={user} onLogout={() => setUser(null)} defaultTab={defaultTab} />
     : <Login onLoginSuccess={setUser} />;
 };
 

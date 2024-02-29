@@ -50,7 +50,7 @@ export const CompanyDetails = ({ companyId }: IProps) => {
 
     return <main className={'company-details'} data-company-id={companyId}>
         <span className={'company-name'}>{company.name}</span>
-        <span className={'company-url'}><a href={'https://' + company.url} target="_blank" className="link">{company.url}</a></span>
+        <span className={'company-url'}><a href={company.url} target="_blank" className="link">{company.url}</a></span>
         {isFollowing
           ? <span className={'company-follow btn btn-danger'} onClick={e => clickUnfollow(e as unknown as MouseEvent)}>Unfollow</span>
           : <span className={'company-follow btn'} onClick={e => clickFollow(e as unknown as MouseEvent)}>Follow</span>}
