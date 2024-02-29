@@ -168,7 +168,7 @@ class User(db.Model):
         recommendations = (
             db.session.query(UserCompany)
             .filter(UserCompany.user_id == self.id, UserCompany.distance != -1)
-            .order_by(UserCompany.distance.desc())
+            .order_by(UserCompany.distance.asc())
         )
         return recommendations[:k]
 
