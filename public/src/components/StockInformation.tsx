@@ -1,11 +1,15 @@
 import IStock, {extractStockData, StockViewType} from "../types/IStock";
-import {useEffect, useRef, useState} from "react";
+import {useState} from "react";
 import {ICompany} from "../types/ICompany";
-import {capitalise, createDateArray, formatDate, formatDateTime, formatNumber} from "../util";
-import {Chart} from "chart.js";
-import "chart.js/auto";
+import {calculateMean, capitalise, createDateArray, formatDate, formatDateTime, formatNumber} from "../util";
+import ChartAnnotation from "chartjs-plugin-annotation";
+import Chart, {ChartOptions} from "chart.js/auto";
+import { Line } from "react-chartjs-2";
 
 import "styles/stock-information.scss";
+
+// Register annotations plugin
+Chart.register(ChartAnnotation);
 
 interface IProps {
   company: ICompany;
@@ -14,28 +18,6 @@ interface IProps {
 
 export const StockInformation = ({ stock, company }: IProps) => {
   const [stockViewType, setStockViewType] = useState<StockViewType>("day");
-  const [chart, setChart] = useState<Chart | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    // Initialise chart and stock data
-    setStockViewType("day");
-
-    // Cleanup chart on dismount
-    return () => {
-      chart?.destroy();
-    };
-  }, []);
-
-  // Update chart when `stockViewType` changes
-  useEffect(() => {
-    if (canvasRef.current) {
-      chart?.destroy();
-
-      const newChart = generateLineGraph(canvasRef.current, stock, stockViewType);
-      setChart(newChart);
-    }
-  }, [stockViewType]);
 
   return <div className={'stock-information'} data-company-id={stock.companyId}>
     <span className={'stock-title'}>Stock data for {company.name}</span>
@@ -56,7 +38,7 @@ export const StockInformation = ({ stock, company }: IProps) => {
     </span>
 
     <span className={'stock-graph-container'}>
-      <canvas id={'stock-graph'} ref={canvasRef} />
+      {generateLineGraph(stock, stockViewType)}
     </span>
   </div>
 };
@@ -98,12 +80,13 @@ function stockTypeToDates(type: StockViewType): [Date, Date] {
 }
 
 /** Generate line chart. */
-function generateLineGraph(canvas: HTMLCanvasElement, stock: IStock, type: StockViewType) {
+function generateLineGraph(stock: IStock, type: StockViewType) {
   const stockData = extractStockData(stock, type);
+  const minimum = Math.min.apply(null, stockData);
+  const maximum = Math.max.apply(null, stockData);
+  const mean = calculateMean(stockData);
 
-  return new Chart(canvas, {
-    type: 'line',
-    data: {
+  const data = {
       labels: createDateArray(...stockTypeToDates(type), stockData.length).map(type === "day" ? formatDateTime : formatDate),
       datasets: [
         {
@@ -111,19 +94,47 @@ function generateLineGraph(canvas: HTMLCanvasElement, stock: IStock, type: Stock
           data: stockData
         }
       ]
-    },
-    options: {
+    };
+
+  const options = {
       elements: {
         point: {
           radius: 0
         }
       },
       plugins: {
-          title: {
-              display: true,
-              text: stock.symbol + ' Stocks Over the Last ' + capitalise(type)
-          }
+        title: {
+          display: true,
+          text: stock.symbol + ' Stocks Over the Last ' + capitalise(type)
+        },
+        annotation: {
+          annotations: [{
+            type: 'line',
+            yMin: minimum,
+            yMax: minimum,
+            borderColor: 'rgb(200, 50, 50)',
+            borderWidth: 1,
+            borderDash: [10, 5]
+          },
+          {
+            type: 'line',
+            yMin: maximum,
+            yMax: maximum,
+            borderColor: 'rgb(200, 50, 50)',
+            borderWidth: 1,
+            borderDash: [10, 5]
+          },
+          {
+            type: 'line',
+            yMin: mean,
+            yMax: mean,
+            borderColor: 'rgb(50, 150, 50)',
+            borderWidth: 1,
+            borderDash: [10, 5]
+          }]
+        }
       }
-    }
-  });
+    } as ChartOptions<"line">;
+
+  return <Line data={data} options={options} />
 }

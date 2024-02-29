@@ -49,3 +49,6 @@ export function createDateArray(start: Date, end: Date, count: number) {
   const delta = (end.valueOf() - start.valueOf()) / count;
   return Array.from({ length: count }, (_, i) => new Date(start.valueOf() + delta * i));
 }
+
+/** Calculate the mean value in a list. */
+export const calculateMean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
