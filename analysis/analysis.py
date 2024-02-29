@@ -5,6 +5,7 @@ from typing import List
 # Sentiment Analysis Modules
 from nltk import download as nltk_download
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk import tokenize
 
 # Content Recommendation Modules
 import numpy as np
@@ -14,44 +15,36 @@ from sklearn.model_selection import train_test_split
 import scipy.sparse as sp
 
 nltk_download('vader_lexicon')
+nltk_download('punkt')
 
 
 def sentiment_label(text: str) -> dict:
     """Returns a dictionary with the appropriate label and score for the text."""
     sid = SentimentIntensityAnalyzer()
-    analysis = sid.polarity_scores(text)
-    score = analysis["compound"]
+    lines_list = tokenize.sent_tokenize(text)
+    sid = SentimentIntensityAnalyzer()
+    score = []
+    for line in lines_list:
+        analysis = sid.polarity_scores(line)
+        score.append(analysis["compound"])
+
+    score = np.mean(np.array(score))
 
     return {"score": score, "label": sentiment_score_to_text(score)}
 
 
 def sentiment_score_to_text(score: float) -> str:
     """Given a sentiment score, return the appropriate label."""
-    if score >= 0.6:
+    if score >= 0.5:
         return "Very Positive"
-    if score >= 0.2:
+    if score >= 0.05:
         return "Positive"
-    if score >= -0.2:
+    if score >= -0.05:
         return "Neutral"
-    if score >= -0.6:
+    if score >= -0.5:
         return "Negative"
 
     return "Very Negative"
-
-
-def recommend_soft(k, user, stocks) -> List[int]:
-    """Given a user and several other stocks vectors recommend the top k ones based off euclidian distance."""
-
-    user = np.array(user)
-    stocks = np.array(stocks)
-
-    # Similarity based off euclidian distance
-    distances = np.linalg.norm(stocks - user, axis=1)
-
-    # Sort entries
-    sorted_indices = np.argsort(distances)
-
-    return sorted_indices[:k].tolist()
 
 
 # TODO
