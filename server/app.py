@@ -32,7 +32,49 @@ def create_app() -> Flask:
         db.create_all()
         dev = False
         if dev:
-            add_data()
+            db.drop_all()
+            db.create_all()
+            user = User(email="admin", name="admin", password="admin", opt_email=False)
+            sector = Sector(name="Technology")
+            apple = Company(
+                name="Apple",
+                url="https://www.apple.com",
+                description="Apple Inc.",
+                location="Cupertino, CA",
+                market_cap=2000000000,
+                ceo="Tim Cook",
+                last_scraped=datetime.now(),
+            )
+            ibm = Company(
+                "IBM",
+                "https://www.ibm.com",
+                "IBM Inc.",
+                "Armonk, NY",
+                1000000000,
+                "Arvind Krishna",
+                datetime.now(),
+            )
+            db.session.add(user)
+            db.session.add(sector)
+            db.session.add(apple)
+            db.session.add(ibm)
+            db.session.commit()
+            apple_nasdaq = Stock("AAPL", apple.id, "NYQ", 1000, 150, 2, "", "", "", "")
+            apple_ne = Stock("AAPL.NE", apple.id, "NEO", 1000, 150, 2, "", "", "", "")
+            apple_ger = Stock("APC.DE", apple.id, "GER", 1000, 150, 2, "", "", "", "")
+            ibm_nyq = Stock("IBM", ibm.id, "NYQ", 1000, 150, 2, "", "", "", "")
+            ibm_ger = Stock("IBM.DE", ibm.id, "GER", 1000, 150, 2, "", "", "", "")
+            db.session.add(apple_nasdaq)
+            db.session.add(apple_ne)
+            db.session.add(apple_ger)
+            db.session.add(ibm_nyq)
+            db.session.add(ibm_ger)
+            db.session.commit()
+            db.session.add(UserSector(user.id, sector.id))
+            db.session.add(CompanySector(apple.id, sector.id))
+            db.session.add(CompanySector(ibm.id, sector.id))
+            db.session.add(UserCompany(user.id, apple.id, 1))
+            db.session.commit()
 
     # Attach the email service
     mail.app = app

@@ -38,8 +38,11 @@ def ensure_auth(func: Callable[[User], None]):
     return action
 
 
-def get_form_or_default(property_name: str, default: any) -> any:
-    return request.form[property_name] if property_name in request.form else default
+def get_form_or_default(property_name: str, default: any, action: Callable[[str], any] = None) -> any:
+    if value := request.form.get(property_name):
+        return action(value) if action else value
+    else:
+        return default
 
 
 def create_endpoints(app: Flask) -> None:
@@ -270,9 +273,9 @@ def create_endpoints(app: Flask) -> None:
         article = Article.get_by_id(article_id)
 
         return jsonify({
-            'error': True,
-            'articleId': article_id
-        } if article is None else {
+                           'error': True,
+                           'articleId': article_id
+                       } if article is None else {
             'error': False,
             'data': article.to_dict()
         })
@@ -295,10 +298,11 @@ def create_endpoints(app: Flask) -> None:
           company: Company;
         }[]
         """
+
         def to_dict(uc: UserCompany) -> dict:
             return {
                 **uc.to_dict(),
-                'company': interface.get_company_details(uc.company_id, user.id)[1]
+                'company': interface.get_company_details_by_id(uc.company_id, user.id)[1]
             }
 
         try:
@@ -351,7 +355,7 @@ def create_endpoints(app: Flask) -> None:
             return
 
         load_stock = get_form_or_default("loadStock", "false") == "true"
-        company, company_details = interface.get_company_details(company_id, user.id, load_stock)
+        company, company_details = interface.get_company_details_by_id(company_id, user.id, load_stock)
 
         if not company:
             return jsonify({
@@ -376,7 +380,7 @@ def create_endpoints(app: Flask) -> None:
 
         company_ids = [user_company.company_id for user_company in db.session.query(UserCompany).all()]
         most_common_companies = [elem for elem, _ in Counter(company_ids).most_common(max_count)]
-        popular = [interface.get_company_details(company_id, user.id)[1] for company_id in most_common_companies]
+        popular = [interface.get_company_details_by_id(company_id, user.id)[1] for company_id in most_common_companies]
         return jsonify(popular)
 
     @app.route('/company/stock', methods=("POST",))
@@ -388,34 +392,45 @@ def create_endpoints(app: Flask) -> None:
     @app.route('/company/search', methods=("POST",))
     @ensure_auth
     def company_search(user: User):
-        
-        """Accepts 'ceo':string, 'companyName', 'sectors': list, 'sentimentRange': list[2], 'marketCapRange': list[2], 'stockPriceRange': list[2], 'stockChange': boolean """
-        ceo = str(request.form.get('ceo'))
-        companyName = str(request.form.get('companyName'))
-        sectors = [str(x) for x in request.form.getlist('sectors')]
-        sentimentRange = []
-        #marketCapRange = request.form.getlist('marketCapRange')
-        #stockPriceRange = request.form.getlist('stockPriceRange')
-        #stockChange = request.form.get('stockChange')
-        try:
-            sentimentRange = [float(x) for x in request.form.getlist('sentimentRange')]
-        except:
-            pass
-        #try:
-        #    stockChange = bool(stockChange)
-        #except:
-        #    stockChange = None
-        return jsonify(interface.search_companies(ceo, companyName, sectors, sentimentRange, user.id))
+        """Search companies."""
 
+        # ceo?: string
+        ceo: str | None = get_form_or_default('ceo', None)
 
+        # companyName?: string
+        company_name: str | None = get_form_or_default('name', None)
 
+        # sectors: int[]. List of sector IDs.
+        sectors: list[int] | None = get_form_or_default('sectors', None, lambda v: interface.string_to_list(v, int))
 
+        # sentimentRange: [float, float]. [lower, upper) range.
+        sentiment_range: tuple[float, float] | None = get_form_or_default('sentimentRange', None,
+                                                                          lambda v: interface.string_to_list(v, float))
+        if sentiment_range is not None and len(sentiment_range) != 2:
+            sentiment_range = None
 
-    @app.route('/test', methods=("GET",))
-    @ensure_auth
-    def test(user: User):
-        temp = interface.search_companies('', 'g', [1,2,3,4,5], [0, 1], user.id)
-        print(temp)
-        return jsonify(True)
+        # marketCapRange: [float, float]. [lower, upper) range.
+        market_cap_range: tuple[float, float] | None = get_form_or_default(
+            'marketCapRange', None, lambda v: interface.string_to_list(v, float))
 
+        if market_cap_range is not None and len(market_cap_range) != 2:
+            market_cap_range = None
 
+        # stockPriceRange: [float, float]. [lower, upper) range.
+        stock_price_range: tuple[float, float] | None = get_form_or_default(
+            'stockPriceRange', None, lambda v: interface.string_to_list(v, float))
+
+        if stock_price_range is not None and len(stock_price_range) != 2:
+            stock_price_range = None
+
+        companies = interface.search_companies(
+            ceo=ceo,
+            name=company_name,
+            sectors=sectors,
+            sentiment=sentiment_range,
+            market_cap=market_cap_range,
+            stock_price=stock_price_range,
+            user_id=user.id
+        )
+
+        return jsonify(list(map(lambda c: interface.get_company_details(c, user.id), companies)))

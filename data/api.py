@@ -135,9 +135,7 @@ async def get_news(name: str) -> list[dict]:
                                 "url": article["link"],
                                 "headline": article["title"],
                                 "publisher": article["clean_url"],
-                                "date": datetime.strptime(
-                                    article["published_date"], "%Y-%m-%dT%H:%M:%SZ"
-                                ),
+                                "date": datetime.strptime(article["published_date"], "%Y-%m-%dT%H:%M:%SZ"),
                                 "summary": article["excerpt"],
                             }
                         )
