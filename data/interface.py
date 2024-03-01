@@ -62,15 +62,23 @@ def is_valid_user(email: str, password: str) -> bool:
     return user.validate(password)
 
 
-def get_company_details_by_id(company_id: int, user_id: int = None, load_stock=False) -> tuple[db.Company, dict] | None:
+def get_company_details_by_id(
+    company_id: int, user_id: int = None, load_stock=False
+) -> tuple[db.Company, dict] | None:
     """Return (company, company_details). Get full stock details?"""
-    if company := db.db.session.query(db.Company).where(db.Company.id == company_id).one_or_none():
+    if (
+        company := db.db.session.query(db.Company)
+        .where(db.Company.id == company_id)
+        .one_or_none()
+    ):
         return company, get_company_details(company, user_id, load_stock)
     else:
         return None
 
 
-def get_company_details(company: db.Company, user_id: int = None, load_stock=False) -> dict:
+def get_company_details(
+    company: db.Company, user_id: int = None, load_stock=False
+) -> dict:
     """Get company details, given the company object."""
     details = {
         **company.to_dict(),
@@ -114,7 +122,10 @@ def get_followed_companies(user_id: int) -> list[tuple[db.Company, dict]] | None
         )
     )
     return list(
-        map(lambda company_id: get_company_details_by_id(company_id, user_id), followed_ids)
+        map(
+            lambda company_id: get_company_details_by_id(company_id, user_id),
+            followed_ids,
+        )
     )
 
 
@@ -125,7 +136,7 @@ def search_companies(
     sentiment: FloatRange = None,
     user_id: int = None,
     stock_price: FloatRange = None,
-    market_cap: FloatRange = None
+    market_cap: FloatRange = None,
 ) -> list[db.Company]:
     """Search companies given the following parameters."""
 
@@ -141,8 +152,9 @@ def search_companies(
 
     # Filter by sectors
     if sectors is not None and len(sectors) > 0:
-        query = query.join(db.CompanySector, db.CompanySector.company_id == db.Company.id)\
-            .filter(db.CompanySector.sector_id.in_(sectors))
+        query = query.join(
+            db.CompanySector, db.CompanySector.company_id == db.Company.id
+        ).filter(db.CompanySector.sector_id.in_(sectors))
 
     # Include stock table?
     if stock_price is not None or market_cap is not None:
@@ -150,17 +162,74 @@ def search_companies(
 
     # Filter by market cap
     if market_cap is not None:
-        query = query.filter(and_(db.Stock.market_cap >= market_cap[0], db.Stock.market_cap < market_cap[1]))
+        query = query.filter(
+            and_(
+                db.Stock.market_cap >= market_cap[0],
+                db.Stock.market_cap < market_cap[1],
+            )
+        )
 
     # Filter by stock price
     if stock_price is not None:
-        query = query.filter(and_(db.Stock.stock_price >= stock_price[0], db.Stock.stock_price < stock_price[1]))
+        query = query.filter(
+            and_(
+                db.Stock.stock_price >= stock_price[0],
+                db.Stock.stock_price < stock_price[1],
+            )
+        )
 
     # Filter by sentiment score bounds
     if sentiment is not None:
-        query = query.filter(and_(db.Company.sentiment >= sentiment[0], db.Company.sentiment < sentiment[1]))
+        query = query.filter(
+            and_(
+                db.Company.sentiment >= sentiment[0],
+                db.Company.sentiment < sentiment[1],
+            )
+        )
 
     return query.all()
+
+
+def add_company(name: str) -> db.Company | None:
+    # check if company exists
+    company = (
+        db.db.session.query(db.Company).where(db.Company.name == name).one_or_none()
+    )
+    if company:
+        return company
+
+    # convert name to symbol
+    symbols = run(api.search_companies(name))
+    if len(symbols) == 0:
+        return None
+    symbol = symbols[0].split(":")[1]
+    info = run(api.get_company_info(symbol))
+    company = db.Company(
+        name=name,
+        url=info["website"],
+        description=info["description"],
+        location=info["address"],
+        market_cap=info["market_cap"],
+        ceo=info["ceo"],
+        last_scraped=datetime.now(),
+    )
+    db.db.session.add(company)
+    db.db.session.commit()
+    stock_info = run(api.get_stock_info(symbol))
+    stock = db.Stock(
+        symbol,
+        company.id,
+        stock_info["exchange"],
+        stock_info["market_cap"],
+        stock_info["stock_day"][-1],
+        stock_info["stock_day"][-1] - stock_info["stock_day"][0],
+        stock_info["stock_week"],
+        stock_info["stock_month"],
+        stock_info["stock_year"],
+    )
+    db.db.session.add(stock)
+    db.db.session.commit()
+    return company
 
 
 def update_company_info(company_id: int) -> None:

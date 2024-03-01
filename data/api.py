@@ -64,8 +64,10 @@ async def get_stock_info(symbol: str) -> dict:
                 "Close"
             ].to_list(),
             "market_cap": ticker.info.get("marketCap", ""),
+            "exchange": ticker.info.get("exchange", ""),
         }
     except:
+        market_cap, exchange = await get_market_cap_and_exchange(symbol)
         return {
             "stock_day": await get_stock_period(
                 symbol, "TIME_SERIES_INTRADAY", 24, "60min"
@@ -73,7 +75,8 @@ async def get_stock_info(symbol: str) -> dict:
             "stock_week": await get_stock_period(symbol, "TIME_SERIES_DAILY", 7),
             "stock_month": await get_stock_period(symbol, "TIME_SERIES_DAILY", 30),
             "stock_year": await get_stock_period(symbol, "TIME_SERIES_WEEKLY", 52),
-            "market_cap": await get_market_cap(symbol),
+            "market_cap": market_cap,
+            "exchange": exchange,
         }
 
 
@@ -103,16 +106,16 @@ async def get_stock_period(symbol: str, period: str, num: int, interval="") -> l
                 return []
 
 
-async def get_market_cap(symbol: str) -> float:
+async def get_market_cap_and_exchange(symbol: str) -> tuple[float, float]:
     async with ClientSession() as session:
         async with session.get(
             f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={getenv('ALPHAVANTAGE_API_KEY')}"
         ) as response:
             if response.status == 200:
                 data = await response.json()
-                return data.get("MarketCapitalization", "")
+                return data.get("MarketCapitalization", ""), data.get("Exchange", "")
             else:
-                return 0
+                return 0, 0
 
 
 async def get_news(name: str) -> list[dict]:
@@ -135,7 +138,9 @@ async def get_news(name: str) -> list[dict]:
                                 "url": article["link"],
                                 "headline": article["title"],
                                 "publisher": article["clean_url"],
-                                "date": datetime.strptime(article["published_date"], "%Y-%m-%dT%H:%M:%SZ"),
+                                "date": datetime.strptime(
+                                    article["published_date"], "%Y-%m-%dT%H:%M:%SZ"
+                                ),
                                 "summary": article["excerpt"],
                             }
                         )
