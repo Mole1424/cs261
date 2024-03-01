@@ -241,6 +241,5 @@ def update_loop(app: Flask) -> None:
             ]
             for company in companies:
                 update_company_info(company.id)
-                sleep(
-                    86400 / len(companies)
-                )  # sleep for 24 hours divided by the number of companies
+                # sleep for a day / number of companies
+                sleep(86400 / max(len(companies), 1))
