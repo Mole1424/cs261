@@ -16,6 +16,8 @@ def string_to_list(string: str, convert_fn: Callable[[str], any]) -> list:
     """Attempt to convert the input string to a list. String is in the form [x, y, z, ...]. `convert_fn`
     is called on each element."""
 
+    print(string)
+
     def func(x: str):
         try:
             return convert_fn(x.strip())

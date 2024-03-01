@@ -401,27 +401,45 @@ def create_endpoints(app: Flask) -> None:
         company_name: str | None = get_form_or_default('name', None)
 
         # sectors: int[]. List of sector IDs.
-        sectors: list[int] | None = get_form_or_default('sectors', None, lambda v: interface.string_to_list(v, int))
+        sectors: list[int] | None = request.form.getlist('sectors[]')
+        if sectors is not None:
+            try:
+                sectors = list(map(int, sectors))
+            except ValueError:
+                sectors = None
 
         # sentimentRange: [float, float]. [lower, upper) range.
-        sentiment_range: tuple[float, float] | None = get_form_or_default('sentimentRange', None,
-                                                                          lambda v: interface.string_to_list(v, float))
-        if sentiment_range is not None and len(sentiment_range) != 2:
-            sentiment_range = None
+        sentiment_range: list[float] | None = request.form.getlist('sentimentRange[]')
+        if sentiment_range is not None:
+            if len(sentiment_range) == 2:
+                try:
+                    sentiment_range = list(map(float, sentiment_range))
+                except ValueError:
+                    sentiment_range = None
+            else:
+                sentiment_range = None
 
         # marketCapRange: [float, float]. [lower, upper) range.
-        market_cap_range: tuple[float, float] | None = get_form_or_default(
-            'marketCapRange', None, lambda v: interface.string_to_list(v, float))
-
-        if market_cap_range is not None and len(market_cap_range) != 2:
-            market_cap_range = None
+        market_cap_range: list[float] | None = request.form.getlist('marketCapRange[]')
+        if market_cap_range is not None:
+            if len(market_cap_range) == 2:
+                try:
+                    market_cap_range = list(map(float, market_cap_range))
+                except ValueError:
+                    market_cap_range = None
+            else:
+                market_cap_range = None
 
         # stockPriceRange: [float, float]. [lower, upper) range.
-        stock_price_range: tuple[float, float] | None = get_form_or_default(
-            'stockPriceRange', None, lambda v: interface.string_to_list(v, float))
-
-        if stock_price_range is not None and len(stock_price_range) != 2:
-            stock_price_range = None
+        stock_price_range: list[float] | None = request.form.getlist('stockPriceRange[]')
+        if stock_price_range is not None:
+            if len(stock_price_range) == 2:
+                try:
+                    stock_price_range = list(map(float, stock_price_range))
+                except ValueError:
+                    stock_price_range = None
+            else:
+                stock_price_range = None
 
         companies = interface.search_companies(
             ceo=ceo,

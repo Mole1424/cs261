@@ -21,7 +21,7 @@ const root = createRoot(container);
   // TODO change default tab to 'Recent'
   root.render(
     <StrictMode>
-      <App initialUser={userData} defaultTab={'For You'} />
+      <App initialUser={userData} defaultTab={'Search'} />
     </StrictMode>
   );
 })();
