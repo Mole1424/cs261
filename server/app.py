@@ -75,6 +75,7 @@ def create_app() -> Flask:
             db.session.add(CompanySector(ibm.id, sector.id))
             db.session.add(UserCompany(user.id, apple.id, 1))
             db.session.commit()
+
     # Attach the email service
     mail.app = app
     mail.init_app(app)

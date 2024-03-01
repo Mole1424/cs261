@@ -9,6 +9,9 @@ from time import sleep
 from flask import Flask
 
 
+FloatRange = tuple[float, float]
+
+
 def string_to_list(string: str, convert_fn: Callable[[str], any]) -> list:
     """Attempt to convert the input string to a list. String is in the form [x, y, z, ...]. `convert_fn`
     is called on each element."""
@@ -57,17 +60,16 @@ def is_valid_user(email: str, password: str) -> bool:
     return user.validate(password)
 
 
-def get_company_details(
-    company_id: int, user_id: int = None, load_stock=False
-) -> tuple[db.Company, dict] | None:
+def get_company_details_by_id(company_id: int, user_id: int = None, load_stock=False) -> tuple[db.Company, dict] | None:
     """Return (company, company_details). Get full stock details?"""
-    company = (
-        db.db.session.query(db.Company).where(db.Company.id == company_id).one_or_none()
-    )
-
-    if not company:
+    if company := db.db.session.query(db.Company).where(db.Company.id == company_id).one_or_none():
+        return company, get_company_details(company, user_id, load_stock)
+    else:
         return None
 
+
+def get_company_details(company: db.Company, user_id: int = None, load_stock=False) -> dict:
+    """Get company details, given the company object."""
     details = {
         **company.to_dict(),
         "sectors": list(
@@ -79,7 +81,7 @@ def get_company_details(
     }
 
     # Provide full stock data?
-    stock = db.Stock.get_by_company(company_id)
+    stock = db.Stock.get_by_company(company.id)
     if stock is not None:
         if load_stock:
             details["stock"] = stock.to_dict()
@@ -93,7 +95,7 @@ def get_company_details(
             False if user_company is None else user_company.is_following()
         )
 
-    return company, details
+    return details
 
 
 def get_all_sectors() -> list[db.Sector]:
@@ -110,58 +112,46 @@ def get_followed_companies(user_id: int) -> list[tuple[db.Company, dict]] | None
         )
     )
     return list(
-        map(lambda company_id: get_company_details(company_id, user_id), followed_ids)
+        map(lambda company_id: get_company_details_by_id(company_id, user_id), followed_ids)
     )
 
 
 def search_companies(
-    ceo: str = "",
-    name: str = "",
-    sectors: list[int] = [],
-    sentiment: list[float] = [],
+    ceo: str = None,
+    name: str = None,
+    sectors: list[int] = None,
+    sentiment: FloatRange = None,
     user_id: int = None,
-    stockprice: list[float] = [],
-    marketcap: list[int] = [],
-    stockchange: bool = None,
+    stock_price: FloatRange = None,
+    market_cap: FloatRange = None
 ) -> list[db.Company]:
-    # get company ids that match ceo, name, sentiment
-    # for returned ids, filter through sectors
-    # for returned ids, filter through stocks
+    """Search companies given the following parameters."""
 
-    sentimentFilter = (
-        and_(db.Company.sentiment >= sentiment[0], db.Company.sentiment <= sentiment[1])
-        if len(sentiment) == 2
-        else None
-    )
-    sectorFilter = db.CompanySector.sector_id.in_(sectors) if len(sectors) > 0 else None
-    # stockPriceFilter = and_(db.Stock.stock_price >= stockprice[0], db.Stock.stock_price <= stockprice[1]) if len(stockprice) == 2 else None
-    # marketCapFilter = and_(db.Stock.marketcap >= marketcap[0], db.Stock.marketcap <= marketcap[1]) if len(marketcap) == 2 else None
-    # stockChangeFilter = db.Stock.stock_change > 0 if stockchange else (db.Stock.stock_change < 0 if stockchange is not None else None)
-    firstFilter = (
-        db.db.session.query(db.Company.id)
-        .filter(
-            db.Company.ceo.like("%" + ceo + "%"),
-            db.Company.name.like("%" + name + "%"),
-            sentimentFilter,
-        )
-        .all()
-    )
-    firstFilter = [int(result[0]) for result in firstFilter]
+    # TODO filters: stock_price, market_cap
 
-    secondFilter = db.db.session.query(db.CompanySector.company_id).filter(
-        and_(db.CompanySector.company_id.in_(firstFilter), sectorFilter)
-    )
-    secondFilter = [int(result[0]) for result in secondFilter]
+    # Build list which contains conjunction of filters
+    filter_list = []
 
-    # thirdFilter = db.db.session.query(db.Stock.company_id).filter(
-    #                                                                stockChangeFilter,
-    #                                                                marketCapFilter,
-    #                                                                stockPriceFilter
-    #                                                                )
-    # thirdFilter = [int(result[0]) for result in thirdFilter]
-    companies = [
-        get_company_details(company_id, user_id)[1] for company_id in secondFilter
-    ]
+    # Filter by CEO
+    if ceo is not None:
+        filter_list.append(db.Company.ceo.like("%" + ceo + "%"))
+
+    # Filter by name
+    if name is not None:
+        filter_list.append(db.Company.name.like("%" + name + "%"))
+
+    # Filter by sectors
+    if sectors is not None and len(sectors) > 0:
+        filter_list.append(db.CompanySector.sector_id.in_(sectors))
+
+    # Filter by sentiment score bounds
+    if sentiment is not None:
+        filter_list.append(db.Company.sentiment >= sentiment[0])
+        filter_list.append(db.Company.sentiment < sentiment[1])
+
+    # Search companies using filters
+    companies: list[db.Company] = db.db.session.query(db.Company).filter(and_(*filter_list)).all()
+
     return companies
 
 
