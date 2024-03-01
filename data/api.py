@@ -51,7 +51,9 @@ async def get_stock_info(symbol: str) -> dict:
         # TODO: multithreading/async?
         ticker = yf.Ticker(symbol)
         return {
-            "stock_day": ticker.history(period="1d", interval="1h")["Close"].to_list(),
+            "stock_day": ticker.history(period="5d", interval="1h")["Close"].to_list()[
+                -24:
+            ],
             "stock_week": ticker.history(period="1wk", interval="1h")[
                 "Close"
             ].to_list(),
@@ -119,15 +121,12 @@ async def get_news(name: str) -> list[dict]:
         whitelist = "".join([line.strip() for line in f.readlines()])
 
     articles = []
-    print("newscatcher: ", getenv("NEWSCATCHER_API_KEY"))
-    print("newsapi: ", getenv("NEWS_API_KEY"))
     try:
         async with ClientSession(
             headers={"x-api-key": getenv("NEWSCATCHER_API_KEY")}
         ) as session:
             url = f'https://api.newscatcherapi.com/v2/search?q="{name}"&lang=en&sources={whitelist}&sort_by=date&page_size=50'
             async with session.get(url) as response:
-                print("got response")
                 if response.status == 200:
                     data = await response.json()
                     for article in data["articles"]:
@@ -136,7 +135,9 @@ async def get_news(name: str) -> list[dict]:
                                 "url": article["link"],
                                 "headline": article["title"],
                                 "publisher": article["clean_url"],
-                                "date": datetime.strptime(article["published_date"], "%Y-%m-%dT%H:%M:%SZ")
+                                "date": datetime.strptime(
+                                    article["published_date"], "%Y-%m-%dT%H:%M:%SZ"
+                                ),
                                 "summary": article["excerpt"],
                             }
                         )
@@ -154,7 +155,9 @@ async def get_news(name: str) -> list[dict]:
                                 "url": article["url"],
                                 "headline": article["title"],
                                 "publisher": article["source"]["name"],
-                                "date": datetime.strptime(article["publishedAt"], "%Y-%m-%d %H:%M:%S"),
+                                "date": datetime.strptime(
+                                    article["publishedAt"], "%Y-%m-%d %H:%M:%S"
+                                ),
                                 "summary": "",
                             }
                         )
