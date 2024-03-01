@@ -129,32 +129,38 @@ def search_companies(
 ) -> list[db.Company]:
     """Search companies given the following parameters."""
 
-    # TODO filters: stock_price, market_cap
-
-    # Build list which contains conjunction of filters
-    filter_list = []
+    query = db.db.session.query(db.Company)
 
     # Filter by CEO
     if ceo is not None:
-        filter_list.append(db.Company.ceo.like("%" + ceo + "%"))
+        query = query.filter(db.Company.ceo.like("%" + ceo + "%"))
 
     # Filter by name
     if name is not None:
-        filter_list.append(db.Company.name.like("%" + name + "%"))
+        query = query.filter(db.Company.name.like("%" + name + "%"))
 
     # Filter by sectors
     if sectors is not None and len(sectors) > 0:
-        filter_list.append(db.CompanySector.sector_id.in_(sectors))
+        query = query.join(db.CompanySector, db.CompanySector.company_id == db.Company.id)\
+            .filter(db.CompanySector.sector_id.in_(sectors))
+
+    # Include stock table?
+    if stock_price is not None or market_cap is not None:
+        query = query.join(db.Stock, db.Stock.company_id == db.Company.id)
+
+    # Filter by market cap
+    if market_cap is not None:
+        query = query.filter(and_(db.Stock.market_cap >= market_cap[0], db.Stock.market_cap < market_cap[1]))
+
+    # Filter by stock price
+    if stock_price is not None:
+        query = query.filter(and_(db.Stock.stock_price >= stock_price[0], db.Stock.stock_price < stock_price[1]))
 
     # Filter by sentiment score bounds
     if sentiment is not None:
-        filter_list.append(db.Company.sentiment >= sentiment[0])
-        filter_list.append(db.Company.sentiment < sentiment[1])
+        query = query.filter(and_(db.Company.sentiment >= sentiment[0], db.Company.sentiment < sentiment[1]))
 
-    # Search companies using filters
-    companies: list[db.Company] = db.db.session.query(db.Company).filter(and_(*filter_list)).all()
-
-    return companies
+    return query.all()
 
 
 def update_company_info(company_id: int) -> None:

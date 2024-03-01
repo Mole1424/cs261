@@ -393,6 +393,7 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def company_search(user: User):
         """Search companies."""
+        print(request.form)
 
         # ceo?: string
         ceo: str | None = get_form_or_default('ceo', None)

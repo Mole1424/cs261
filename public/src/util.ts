@@ -52,3 +52,12 @@ export function createDateArray(start: Date, end: Date, count: number) {
 
 /** Calculate the mean value in a list. */
 export const calculateMean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+/** Remove item from array. Note, mutates the array and returns reference. */
+export function arrayRemove<T>(array: T[], item: T): T[] {
+  const index = array.findIndex(x => x === item);
+  if (index !== -1)
+    array.splice(index, 1);
+
+  return array;
+}

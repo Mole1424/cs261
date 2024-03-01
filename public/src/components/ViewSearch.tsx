@@ -11,6 +11,7 @@ import ISector from "../types/ISector";
 import PlusIcon from "assets/plus.svg";
 import CrossIcon from "assets/cross.svg";
 import {requestSectors} from "./UserProfile";
+import {arrayRemove} from "../util";
 
 export const ViewSearch = ({ eventCallback }: IViewProps) => {
   const [companies, setCompanies] = useState<ICompanyDetails[]>([]);
@@ -38,7 +39,7 @@ export const ViewSearch = ({ eventCallback }: IViewProps) => {
 
   // Trigger initial search
   useEffect(() => {
-    onSearch({});
+    // onSearch({});
 
     requestSectors()
       .then(response => response && setSectors(response));
@@ -51,7 +52,7 @@ export const ViewSearch = ({ eventCallback }: IViewProps) => {
         sectors={sectors}
         initialSentimentScore={1}
         initialMarketCap={1_000_000_000_000}
-        initialStockPrice={50}
+        initialStockPrice={1_000}
       />
 
       <div className={'cards'}>
@@ -111,6 +112,12 @@ const SearchOptions = (props: ISearchOptionsProps) => {
   }, [fieldCeo, fieldCompanyName, fieldSentimentLower, fieldSentimentUpper, fieldMarketCapLower,
     fieldMarketCapUpper, fieldStockPriceLower, fieldStockPriceUpper, fieldSectors]);
 
+  /** Add new sector. */
+  const addSector = (sectorId: number) => {
+    if (fieldSectors.indexOf(sectorId) === -1)
+      setFieldSectors(s => s.concat([sectorId]));
+  };
+
   return (
     <div className={'search-options'}>
       <span className={'search-ceo'}>
@@ -126,18 +133,26 @@ const SearchOptions = (props: ISearchOptionsProps) => {
       <span className={'search-sectors'}>
         Sectors:
         <span>
-          {fieldSectors.map(sectorId =>
-            <select defaultValue={sectorId} key={sectorId}>
-              {props.sectors.map(sector =>
-                <option key={sector.id} value={sector.id}>{sector.name}</option>
-              )}
-            </select>
+          {fieldSectors.map((sectorId, index) =>
+            <span key={sectorId}>
+              <select defaultValue={sectorId} onChange={e => setFieldSectors(ss => {
+                const copy = [...ss];
+                copy[index] = sectorId;
+                return copy;
+              })}>
+                {props.sectors.map(sector =>
+                  <option key={sector.id} value={sector.id}>{sector.name}</option>
+                )}
+              </select>
+              <img src={CrossIcon} alt={'Remove'} onClick={() => {
+                setFieldSectors(ss => arrayRemove([...ss], sectorId));
+              }} className={'icon style-red'} />
+            </span>
           )}
           {isAddingSector
             ? <>
               <select defaultValue={'_default'} onChange={e => {
-                const newId = +e.target.value;
-                setFieldSectors(sectors => sectors.concat([newId]));
+                addSector(+e.target.value);
                 setIsAddingSector(false);
               }}>
                 <option value="_default" disabled>Select One</option>
