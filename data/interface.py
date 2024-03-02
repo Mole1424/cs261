@@ -76,6 +76,21 @@ def get_company_details_by_id(
         return None
 
 
+def get_company_details_by_symbol(
+    symbol: str, user_id: int = None, load_stock=False
+) -> tuple[db.Company, dict] | None:
+    """Return (company, company_details). Get full stock details?"""
+    if (
+        stock := db.db.session.query(db.Stock)
+        .where(db.Stock.symbol == symbol)
+        .one_or_none()
+    ):
+        company = db.db.session.query(db.Company).filter_by(id=stock.company_id).first()
+        return company, get_company_details(company, user_id, load_stock)
+    else:
+        return None
+
+
 def get_company_details(
     company: db.Company, user_id: int = None, load_stock=False
 ) -> dict:
@@ -190,46 +205,66 @@ def search_companies(
     return query.all()
 
 
-def add_company(name: str) -> db.Company | None:
+def add_company(symbol: str) -> db.Company | None:
     # check if company exists
-    company = (
-        db.db.session.query(db.Company).where(db.Company.name == name).one_or_none()
+    db_symbol = (
+        db.db.session.query(db.Stock).where(db.Stock.symbol == symbol).one_or_none()
     )
-    if company:
-        return company
+    if db_symbol:
+        return (
+            db.db.session.query(db.Company)
+            .where(db.Company.id == db_symbol.company_id)
+            .one_or_none()
+        )
 
-    # convert name to symbol
-    symbols = run(api.search_companies(name))
-    if len(symbols) == 0:
-        return None
-    symbol = symbols[0].split(":")[1]
     info = run(api.get_company_info(symbol))
     company = db.Company(
-        name=name,
-        url=info["website"],
+        name=info["name"],
+        url=info["url"],
         description=info["description"],
-        location=info["address"],
+        location=info["location"],
         market_cap=info["market_cap"],
         ceo=info["ceo"],
         last_scraped=datetime.now(),
     )
     db.db.session.add(company)
     db.db.session.commit()
+
+    sector_name = info["sector"]
+    if not (
+        sector := db.db.session.query(db.Sector)
+        .where(db.Sector.name == sector_name)
+        .one_or_none()
+    ):
+        sector = db.Sector(sector_name)
+        db.db.session.add(sector)
+        db.db.session.commit()
+
+    db.db.session.add(db.CompanySector(company.id, sector.id))
+    db.db.session.commit()
+
+    add_stock(symbol, company.id)
+    return company
+
+
+def add_stock(symbol: str, company_id: int) -> db.Stock | None:
+    """Add a stock to a company."""
     stock_info = run(api.get_stock_info(symbol))
     stock = db.Stock(
         symbol,
-        company.id,
+        company_id,
         stock_info["exchange"],
         stock_info["market_cap"],
         stock_info["stock_day"][-1],
         stock_info["stock_day"][-1] - stock_info["stock_day"][0],
-        stock_info["stock_week"],
-        stock_info["stock_month"],
-        stock_info["stock_year"],
+        " ".join(map(str, stock_info["stock_day"])),
+        " ".join(map(str, stock_info["stock_week"])),
+        " ".join(map(str, stock_info["stock_month"])),
+        " ".join(map(str, stock_info["stock_year"])),
     )
     db.db.session.add(stock)
     db.db.session.commit()
-    return company
+    return stock
 
 
 def update_company_info(company_id: int) -> None:
@@ -295,17 +330,12 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
             for key, value in news[i].items():
                 if value != "":
                     setattr(news_in_db[i], key, value)
-                elif key == "summary":
-                    # newsapi does not provide summaries so get first paragraph from content
-                    content = api.get_article_content(news[i]["url"])
-                    setattr(news_in_db[i], key, content.split("\n")[0])
     db.db.session.commit()
 
 
 def update_loop(app: Flask) -> None:
     """Staggered throughout the day, update info on a company thats followed"""
     with app.app_context():
-        sleep(10)
         while True:
             # get all companies in usercompany that are followed by a user
             companies = [

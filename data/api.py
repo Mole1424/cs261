@@ -8,7 +8,7 @@ from os import getenv
 
 async def get_company_info(symbol: str) -> dict:
     """Get company info given a stock symbol.
-    Returns a dictionary with the company's name, website, description, location, market cap, and CEO.
+    Returns a dictionary with the company's name, website, description, location, market cap, CEO, and sector.
     If the company is not found, returns an empty dictionary."""
     try:
         # first try to get the info from yfinance
@@ -20,6 +20,7 @@ async def get_company_info(symbol: str) -> dict:
             "location": f"{info.get('address1', '')} {info.get('city', '')} {info.get('state', '')} {info.get('country', '')}",
             "market_cap": info.get("marketCap", ""),
             "ceo": info.get("companyOfficers", "")[0].get("name", ""),
+            "sector": info.get("sector", ""),
         }
 
     except:
@@ -34,9 +35,10 @@ async def get_company_info(symbol: str) -> dict:
                         "name": data.get("Name", ""),
                         "url": "",
                         "description": data.get("Description", ""),
-                        "location": data.get("Address", ""),
+                        "location": data.get("Address", "").capitalize(),
                         "market_cap": data.get("MarketCapitalization", ""),
                         "ceo": "",
+                        "sector": data.get("Sector", "").capitalize(),
                     }
                 else:
                     return {}
@@ -153,6 +155,8 @@ async def get_news(name: str) -> list[dict]:
                 if response.status == 200:
                     data = await response.json()
                     for article in data["articles"]:
+                        # first paragraph of the article as summary
+                        summary = get_article_content(article["url"]).split("\n")[0]
                         articles.append(
                             {
                                 "url": article["url"],
@@ -161,7 +165,7 @@ async def get_news(name: str) -> list[dict]:
                                 "date": datetime.strptime(
                                     article["publishedAt"], "%Y-%m-%d %H:%M:%S"
                                 ),
-                                "summary": "",
+                                "summary": summary,
                             }
                         )
     return articles

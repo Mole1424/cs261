@@ -5,8 +5,10 @@ import mimetypes
 
 from server import constants
 from data.database import *
+from data.interface import add_company, get_company_details_by_symbol
 from server.mail import mail
 from server.routes import create_endpoints
+import pandas as pd
 
 
 def create_app() -> Flask:
@@ -32,49 +34,7 @@ def create_app() -> Flask:
         db.create_all()
         dev = False
         if dev:
-            db.drop_all()
-            db.create_all()
-            user = User(email="admin", name="admin", password="admin", opt_email=False)
-            sector = Sector(name="Technology")
-            apple = Company(
-                name="Apple",
-                url="https://www.apple.com",
-                description="Apple Inc.",
-                location="Cupertino, CA",
-                market_cap=2000000000,
-                ceo="Tim Cook",
-                last_scraped=datetime.now(),
-            )
-            ibm = Company(
-                "IBM",
-                "https://www.ibm.com",
-                "IBM Inc.",
-                "Armonk, NY",
-                1000000000,
-                "Arvind Krishna",
-                datetime.now(),
-            )
-            db.session.add(user)
-            db.session.add(sector)
-            db.session.add(apple)
-            db.session.add(ibm)
-            db.session.commit()
-            apple_nasdaq = Stock("AAPL", apple.id, "NYQ", 1000, 150, 2, "", "", "", "")
-            apple_ne = Stock("AAPL.NE", apple.id, "NEO", 1000, 150, 2, "", "", "", "")
-            apple_ger = Stock("APC.DE", apple.id, "GER", 1000, 150, 2, "", "", "", "")
-            ibm_nyq = Stock("IBM", ibm.id, "NYQ", 1000, 150, 2, "", "", "", "")
-            ibm_ger = Stock("IBM.DE", ibm.id, "GER", 1000, 150, 2, "", "", "", "")
-            db.session.add(apple_nasdaq)
-            db.session.add(apple_ne)
-            db.session.add(apple_ger)
-            db.session.add(ibm_nyq)
-            db.session.add(ibm_ger)
-            db.session.commit()
-            db.session.add(UserSector(user.id, sector.id))
-            db.session.add(CompanySector(apple.id, sector.id))
-            db.session.add(CompanySector(ibm.id, sector.id))
-            db.session.add(UserCompany(user.id, apple.id, 1))
-            db.session.commit()
+            add_data()
 
     # Attach the email service
     mail.app = app
@@ -102,44 +62,32 @@ def create_app() -> Flask:
 def add_data():
     db.drop_all()
     db.create_all()
-    user = User(email="admin", name="admin", password="admin", opt_email=False)
-    sector = Sector(name="Technology")
-    apple = Company(
-        name="Apple",
-        url="https://www.apple.com",
-        description="Apple Inc.",
-        location="Cupertino, CA",
-        market_cap=2000000000,
-        ceo="Tim Cook",
-        last_scraped=datetime.now(),
-    )
-    ibm = Company(
-        "IBM",
-        "https://www.ibm.com",
-        "IBM Inc.",
-        "Armonk, NY",
-        1000000000,
-        "Arvind Krishna",
-        datetime.now(),
-    )
-    db.session.add(user)
-    db.session.add(sector)
-    db.session.add(apple)
-    db.session.add(ibm)
+
+    admin_user = User("test@admin.com", "admin", getenv("ADMIN_PASSWORD"), False)
+    db.session.add(admin_user)
     db.session.commit()
-    apple_nasdaq = Stock("AAPL", apple.id, "NYQ", 1000, 150, 2, "", "", "", "")
-    apple_ne = Stock("AAPL.NE", apple.id, "NEO", 1000, 150, 2, "", "", "", "")
-    apple_ger = Stock("APC.DE", apple.id, "GER", 1000, 150, 2, "", "", "", "")
-    ibm_nyq = Stock("IBM", ibm.id, "NYQ", 1000, 150, 2, "", "", "", "")
-    ibm_ger = Stock("IBM.DE", ibm.id, "GER", 1000, 150, 2, "", "", "", "")
-    db.session.add(apple_nasdaq)
-    db.session.add(apple_ne)
-    db.session.add(apple_ger)
-    db.session.add(ibm_nyq)
-    db.session.add(ibm_ger)
-    db.session.commit()
-    db.session.add(UserSector(user.id, sector.id))
-    db.session.add(CompanySector(apple.id, sector.id))
-    db.session.add(CompanySector(ibm.id, sector.id))
-    db.session.add(UserCompany(user.id, apple.id, 1))
+
+    print("added admin")
+
+    # get s&p 500 data
+    snp = pd.read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
+    symbols = [ticker.replace(".", "-") for ticker in snp[0]["Symbol"].tolist()]
+
+    # get ftse 100 data
+    ftse = pd.read_html("https://en.wikipedia.org/wiki/FTSE_100_Index")
+    symbols += [ticker + ".L" for ticker in ftse[4]["Ticker"].to_list()]
+
+    print("got symbols")
+
+    for symbol in symbols:
+        print("adding", symbol)
+        add_company(symbol)
+
+    print("following companies")
+
+    initial_follow = ["AAPL", "GOOGL", "MSFT", "TSCO.L", "BP.L"]
+    for symbol in initial_follow:
+        db.session.add(
+            UserCompany(admin_user.id, get_company_details_by_symbol(symbol)[0].id, -1)
+        )
     db.session.commit()
