@@ -173,19 +173,33 @@ async def get_news(name: str) -> list[dict]:
 
 async def search_companies(query: str) -> list[str]:
     """Search for companies given a query."""
-    async with ClientSession() as session:
-        async with session.get(
-            f"https://query2.finance.yahoo.com/v1/finance/search?q={query}"
-        ) as response:
-            if response.status == 200:
-                data = await response.json()
-                # return the first 5 results
-                return [
-                    result["longname"] + ":" + result["symbol"]
-                    for result in data["quotes"][:5]
-                ]
-            else:
-                return []
+    try:
+        async with ClientSession() as session:
+            async with session.get(
+                f"https://query2.finance.yahoo.com/v1/finance/search?q={query}"
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    # return the first 5 results
+                    return [
+                        result["longname"] + ":" + result["symbol"]
+                        for result in data["quotes"][:5]
+                    ]
+                else:
+                    return []
+    except:
+        async with ClientSession() as session:
+            async with session.get(
+                f"https://finnhub.io/api/v1/search?q={query}&token={getenv('FINNHUB_API_KEY')}"
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return [
+                        result["description"] + ":" + result["symbol"]
+                        for result in data[:5]
+                    ]
+                else:
+                    return []
 
 
 def get_article_content(url: str) -> str:
