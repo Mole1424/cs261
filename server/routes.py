@@ -323,7 +323,7 @@ def create_endpoints(app: Flask) -> None:
             abort(400)
             return
 
-        article = Article.get_by_id(article_id)
+        article = interface.article_By_ID(article_id)
 
         return jsonify({
                            'error': True,
@@ -333,10 +333,10 @@ def create_endpoints(app: Flask) -> None:
             'data': article.to_dict()
         })
 
-    # TODO actually get recent articles
     @app.route("/news/recent", methods=("GET",))
     def news_recent():
-        return jsonify(list(map(Article.to_dict, db.session.query(Article).all())))
+        """Defaults to 10 most recent articles"""
+        return jsonify(list(map(Article.to_dict, interface.recent_articles())))
 
     @app.route("/user/for-you", methods=("POST",))
     @ensure_auth

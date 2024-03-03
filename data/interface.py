@@ -3,7 +3,7 @@ from typing import Callable
 
 import data.api as api
 import data.database as db
-from sqlalchemy import asc, and_
+from sqlalchemy import asc, and_, desc
 from datetime import datetime
 from time import sleep
 from flask import Flask
@@ -334,6 +334,11 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
                     setattr(news_in_db[i], key, value)
     db.db.session.commit()
 
+def recent_articles(count: int = 10) -> list[db.Article] | None:
+    return db.db.session.query(db.Article).order_by(desc(db.Article.date)).limit(count)
+
+def article_By_ID(articleID: int = None) -> db.Article | None:
+    return db.Article.get_by_id(articleID)
 
 def update_loop(app: Flask) -> None:
     """Staggered throughout the day, update info on a company thats followed"""
