@@ -6,7 +6,7 @@ import ArticleCard from "./ArticleCard";
 import "styles/view-cards.scss";
 import IViewProps from "../types/IViewProps";
 
-export const ViewRecent = ({ }: IViewProps) => {
+export const ViewRecent = ({ eventCallback }: IViewProps) => {
   const [newsArticles, setNewsArticles] = useState<INewsArticle[]>([]);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export const ViewRecent = ({ }: IViewProps) => {
     <main className={'content-recent content-cards'}>
       <div className={'cards'}>
         {newsArticles.map(article =>
-          <ArticleCard key={article.id} article={article} />
+          <ArticleCard key={article.id} article={article} eventCallback={eventCallback} />
         )}
       </div>
     </main>

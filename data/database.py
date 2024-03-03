@@ -597,6 +597,8 @@ class Article(db.Model):
             "summary": self.summary,
             "sentimentCategory": sentiment_score_to_text(self.sentiment),
             "sentimentScore": self.sentiment,
+            "relatedCompanies": list(map(lambda c: {'id': c.id, 'name': c.name},
+                                         map(lambda ac: ac.company, self.related_companies)))
         }
 
     def __repr__(self) -> str:
@@ -694,6 +696,9 @@ class ArticleCompany(db.Model):
 
     article_id = db.Column(db.Integer, db.ForeignKey("Article.id"), primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey("Company.id"), primary_key=True)
+
+    company = db.relationship("Company", backref="related_articles", lazy=True)
+    article = db.relationship("Article", backref="related_companies", lazy=True)
 
     def __init__(self, article_id: int, company_id: int):
         self.article_id = article_id

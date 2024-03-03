@@ -5,11 +5,23 @@ import LinkIcon from "assets/link.svg";
 import "styles/article-card.scss";
 import axios, {AxiosResponse} from "axios";
 import {headerFormData} from "../constants";
+import {EventCallback, ILoadCompanyEvent} from "../types/AppEvent";
 
+interface IProps {
+  article: INewsArticle;
+  eventCallback: EventCallback;
+}
 
-export const ArticleCard = ({ article }: { article: INewsArticle }) => {
+export const ArticleCard = ({ article, eventCallback }: IProps) => {
   const [sentimentIcon, sentimentIconClass] = getIconFromCategory(article.sentimentCategory);
   const published = new Date(article.published);
+
+  /** Click on a related company name. */
+  const clickCompanyName = (companyId: number) =>
+    eventCallback({
+      type: 'load-company',
+      companyId
+    } as ILoadCompanyEvent);
 
   return <div className={'article-card'}>
     <span className={'article-title'}>{article.headline}</span>
@@ -28,6 +40,14 @@ export const ArticleCard = ({ article }: { article: INewsArticle }) => {
     <span className={'article-overview'}>
       {article.summary}
     </span>
+    {article.relatedCompanies.length > 0 && (
+      <span className={'article-related'}>
+        <span>Related Companies:</span>
+        {article.relatedCompanies.map(({ id, name }) =>
+          <span key={id} onClick={() => clickCompanyName(id)} className={'link'}>{name}</span>
+        )}
+      </span>
+    )}
   </div>;
 };
 

@@ -5,13 +5,13 @@ import {headerFormData} from "../constants";
 import {ICompanyDetails} from "../types/ICompany";
 import CompanyCard from "./CompanyCard";
 import {ILoadCompanyEvent} from "../types/AppEvent";
+import {requestSectors} from "./UserProfile";
+import {arrayRemove} from "../util";
 
 import "styles/view-search.scss";
 import ISector from "../types/ISector";
 import PlusIcon from "assets/plus.svg";
 import CrossIcon from "assets/cross.svg";
-import {requestSectors} from "./UserProfile";
-import {arrayRemove} from "../util";
 
 export const ViewSearch = ({ eventCallback }: IViewProps) => {
   const [companies, setCompanies] = useState<ICompanyDetails[]>([]);

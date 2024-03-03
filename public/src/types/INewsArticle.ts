@@ -9,4 +9,5 @@ export default interface INewsArticle {
   sentimentScore: number;
   sentimentCategory: SentimentCategory;
   url: string;
+  relatedCompanies: { id: number; name: string; }[];
 }

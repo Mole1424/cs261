@@ -29,7 +29,7 @@ export const Main = ({ user, onLogout, defaultTab, initialEvent }: IProps) => {
   useEffect(() => {
     // Initial event?
     if (initialEvent) {
-      handleCallback(initialEvent);
+      void handleCallback(initialEvent);
     }
 
     // Load default tab content? (event takes precedence)
@@ -70,7 +70,7 @@ export const Main = ({ user, onLogout, defaultTab, initialEvent }: IProps) => {
         if (response && !response.error) {
           setViewContent(<main className={'content-cards'}>
             <div className={'cards'}>
-              <ArticleCard article={response.data!} />
+              <ArticleCard article={response.data!} eventCallback={handleCallback} />
             </div>
           </main>);
           setSelectedTab(-1);

@@ -39,7 +39,6 @@ export const App = ({ initialUser, defaultTab }: IProps) => {
     }
   }, []);
 
-  // TODO set `defaultTab` to 'recent'
   return user
     ? <Main
       user={user}
