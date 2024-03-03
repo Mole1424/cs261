@@ -42,15 +42,6 @@ class User(db.Model):
         """Given a password, return if it is correct."""
         return werkzeug.security.check_password_hash(self.password, password)
 
-    def get_notifications(self) -> list[Notification]:
-        """Return list of notifications for this user."""
-        return (
-            db.session.query(Notification)
-            .join(UserNotification, Notification.id == UserNotification.notification_id)
-            .where(UserNotification.user_id == self.id)
-            .all()
-        )
-
     def get_sectors(self) -> list[Sector]:
         """Return list of sectors this user is interested in."""
         return (
@@ -204,7 +195,7 @@ class Notification(db.Model):
             "id": self.id,
             "targetId": self.target_id,
             "targetType": self.target_type,
-            "message": self.message,
+            "message": self.message
         }
 
     def get_users(self) -> list[User]:
@@ -220,6 +211,35 @@ class Notification(db.Model):
         """Add users to this notification."""
         for user_id in user_ids:
             db.session.add(UserNotification(user_id=user_id, notification_id=self.id))
+
+        db.session.commit()
+
+    @staticmethod
+    def get_by_id(notification_id: int) -> Notification | None:
+        return db.session.query(Notification).filter(Notification.id == notification_id).one_or_none()
+
+    @staticmethod
+    def create_company_notification(company_id: int, message: str):
+        """Create Notification objects about a company. DOES NOT insert into database."""
+        return Notification(
+            target_type=1,
+            target_id=company_id,
+            message=message
+        )
+
+    @staticmethod
+    def create_article_notification(article_id: int, message: str):
+        """Create Notification objects about an article. DOES NOT insert into database."""
+        return Notification(
+            target_type=2,
+            target_id=article_id,
+            message=message
+        )
+
+    @staticmethod
+    def add_to_database(notification: Notification):
+        """Add notification to the database."""
+        db.session.add(notification)
         db.session.commit()
 
 
@@ -227,13 +247,26 @@ class UserNotification(db.Model):
     __tablename__ = "UserNotification"
 
     user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
-    notification_id = db.Column(
-        db.Integer, db.ForeignKey("Notification.id"), primary_key=True
-    )
+    notification_id = db.Column(db.Integer, db.ForeignKey("Notification.id"), primary_key=True)
+    read = db.Column(db.Boolean, default=False)
+
+    notification = db.relationship("Notification", backref="users", lazy=True)
+    user = db.relationship("User", backref="notifications", lazy=True)
 
     def __init__(self, user_id: int, notification_id: int):
         self.user_id = user_id
         self.notification_id = notification_id
+
+    def to_dict(self) -> dict:
+        return {
+            **self.notification.to_dict(),
+            "read": self.read
+        }
+
+    @staticmethod
+    def get(notification_id: int, user_id: int) -> UserNotification | None:
+        return db.session.query(UserNotification).filter(UserNotification.notification_id == notification_id,
+                                                         UserNotification.user_id == user_id).one_or_none()
 
 
 class Sector(db.Model):

@@ -270,6 +270,7 @@ def update_company_info(company_id: int) -> None:
     company = (  # get company to update
         db.db.session.query(db.Company).where(db.Company.id == company_id).one_or_none()
     )
+
     if not company:
         return
 
@@ -277,14 +278,17 @@ def update_company_info(company_id: int) -> None:
         db.db.session.query(db.Stock).where(db.Stock.company_id == company_id).all()
     )
     combined_cap = 0  # combined market cap of all stocks
+
     for symbol in company_symbols:
         stock_info = run(api.get_stock_info(symbol.symbol))
+
         for key, value in stock_info.items():  # update stock info
             if value != "":
                 if type(value) == list:
                     setattr(symbol, key, " ".join(map(str, value)))
                 else:
                     setattr(symbol, key, value)
+
         symbol.stock_price = stock_info["stock_day"][-1]
         symbol.stock_change = stock_info["stock_day"][-1] - stock_info["stock_day"][0]
         db.db.session.commit()

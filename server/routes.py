@@ -4,7 +4,7 @@ from flask import Flask, request, session, abort, jsonify
 from collections import Counter
 
 from server import constants
-from data.database import db, User, Sector, Company, UserCompany, Article
+from data.database import db, User, Sector, Company, UserCompany, Article, UserNotification, Notification
 import data.interface as interface
 from data.database import db, User, Sector
 
@@ -218,9 +218,7 @@ def create_endpoints(app: Flask) -> None:
     @app.route("/user/sectors/remove", methods=("POST",))
     @ensure_auth
     def user_remove_sector(user: User):
-        """
-        Accepts: 'id' of sector to remove from user's profile
-        """
+        """Accepts: 'id' of sector to remove from user's profile."""
         try:
             sector_id = int(request.form["id"])
         except ValueError:
@@ -230,6 +228,61 @@ def create_endpoints(app: Flask) -> None:
         user.remove_sector(sector_id)
 
         return jsonify({"error": False, "user": user.to_dict()})
+    
+    @app.route('/user/notifications', methods=("GET",))
+    @ensure_auth
+    def user_get_notifications(user: User):
+        """Get all notifications linked to this user."""
+        return jsonify(list(map(UserNotification.to_dict, user.notifications)))
+
+    @app.route('/notification/get', methods=("POST",))
+    @ensure_auth
+    def notification_get(user: User):
+        """Get notification `id`."""
+        try:
+            notification_id = int(request.form['id'])
+        except (ValueError, KeyError):
+            abort(400)
+            return
+
+        user_notification = UserNotification.get(notification_id, user.id)
+
+        if not user_notification:
+            return jsonify({
+                "error": True,
+                "message": "Cannot find notification"
+            })
+
+        return jsonify({
+            "error": False,
+            "data": user_notification.to_dict()
+        })
+
+    @app.route('/notification/mark-as-read', methods=("POST",))
+    @ensure_auth
+    def mark_notification_as_read(user: User):
+        """Mark notification `id` as read."""
+        try:
+            notification_id = int(request.form['id'])
+        except (ValueError, KeyError):
+            abort(400)
+            return
+
+        user_notification = UserNotification.get(notification_id, user.id)
+
+        if not user_notification:
+            return jsonify({
+                "error": True,
+                "message": "Cannot find notification"
+            })
+
+        user_notification.read = True
+        db.session.commit()
+
+        return jsonify({
+            "error": False,
+            "data": user_notification.to_dict()
+        })
 
     @app.route('/company/following', methods=("POST",))
     @ensure_auth
