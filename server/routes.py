@@ -346,12 +346,12 @@ def create_endpoints(app: Flask) -> None:
         article = interface.article_by_id(article_id)
 
         return jsonify({
-                           'error': True,
-                           'articleId': article_id
-                       } if article is None else {
-            'error': False,
-            'data': article.to_dict()
-        })
+               'error': True,
+               'articleId': article_id
+           } if article is None else {
+                'error': False,
+                'data': article.to_dict()
+            })
 
     @app.route("/news/recent", methods=("GET",))
     def news_recent():

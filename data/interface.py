@@ -75,7 +75,7 @@ def get_company_details_by_id(
 
 
 def get_company_details_by_symbol(
-    symbol: str, user_id: int = None, load_stock=False
+    symbol: str, user_id: int = None, load_stock=False, repeat=True
 ) -> tuple[db.Company, dict] | None:
     """Return (company, company_details). Get full stock details?"""
     if (
@@ -85,6 +85,9 @@ def get_company_details_by_symbol(
     ):
         company = db.db.session.query(db.Company).filter_by(id=stock.company_id).first()
         return company, get_company_details(company, user_id, load_stock)
+    elif repeat:
+        add_company(symbol)
+        return get_company_details_by_symbol(symbol, user_id, load_stock, False)
     else:
         return None
 
@@ -93,12 +96,19 @@ def get_company_details(
     company: db.Company, user_id: int = None, load_stock=False
 ) -> dict:
     """Get company details, given the company object."""
+
     details = {
         **company.to_dict(),
         "sectors": list(
             map(
                 lambda x: x.sector.to_dict(),
                 db.CompanySector.get_by_company(company.id),
+            )
+        ),
+        "articles": list(
+            map(
+                lambda x: x.to_dict(),
+                get_company_articles(company.id),
             )
         ),
     }
@@ -241,7 +251,10 @@ def add_company(symbol: str) -> db.Company | None:
     db.db.session.add(db.CompanySector(company.id, sector.id))
     db.db.session.commit()
 
-    add_stock(symbol, company.id)
+    stock_names = run(api.get_symbols(info["name"]))
+    for stock in stock_names:
+        add_stock(stock, company.id)
+
     return company
 
 
@@ -311,6 +324,11 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
     if not company:
         return None
 
+    if not (
+        company.last_scraped is None or (datetime.now() - company.last_scraped).days > 1
+    ):
+        return company.get_articles()
+
     news = run(api.get_news(company.name))  # get new newa
     news_in_db = company.get_articles()
     for i in range(50):
@@ -333,6 +351,7 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
                 if value != "":
                     setattr(news_in_db[i], key, value)
     db.db.session.commit()
+    return news
 
 
 def recent_articles(count: int = 10) -> list[db.Article] | None:
