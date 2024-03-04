@@ -228,6 +228,15 @@ def create_endpoints(app: Flask) -> None:
         user.remove_sector(sector_id)
 
         return jsonify({"error": False, "user": user.to_dict()})
+
+    @app.route('/user/notification-stats', methods=("GET",))
+    @ensure_auth
+    def user_notification_stats(user: User):
+        """Get notification statistics."""
+        return jsonify({
+            "total": len(user.notifications),
+            "unread": len(list(filter(lambda un: not un.read, user.notifications)))
+        })
     
     @app.route('/user/notifications', methods=("GET",))
     @ensure_auth
@@ -284,6 +293,17 @@ def create_endpoints(app: Flask) -> None:
             "data": user_notification.to_dict()
         })
 
+    @app.route('/notification/read-all', methods=("POST",))
+    @ensure_auth
+    def notification_mark_all_as_read(user: User):
+        """Mark all notifications as read."""
+        for notification in user.notifications:
+            notification.read = True
+
+        db.session.commit()
+
+        return "", 200
+
     @app.route('/company/following', methods=("POST",))
     @ensure_auth
     def followed_companies(user: User):
@@ -323,7 +343,7 @@ def create_endpoints(app: Flask) -> None:
             abort(400)
             return
 
-        article = interface.article_By_ID(article_id)
+        article = interface.article_by_id(article_id)
 
         return jsonify({
                            'error': True,

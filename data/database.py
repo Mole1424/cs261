@@ -248,6 +248,7 @@ class UserNotification(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
     notification_id = db.Column(db.Integer, db.ForeignKey("Notification.id"), primary_key=True)
+    received = db.Column(db.DateTime)
     read = db.Column(db.Boolean, default=False)
 
     notification = db.relationship("Notification", backref="users", lazy=True)
@@ -260,7 +261,8 @@ class UserNotification(db.Model):
     def to_dict(self) -> dict:
         return {
             **self.notification.to_dict(),
-            "read": self.read
+            "read": self.read,
+            "received": self.received
         }
 
     @staticmethod

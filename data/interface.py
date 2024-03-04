@@ -334,14 +334,17 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
                     setattr(news_in_db[i], key, value)
     db.db.session.commit()
 
+
 def recent_articles(count: int = 10) -> list[db.Article] | None:
     return db.db.session.query(db.Article).order_by(desc(db.Article.date)).limit(count)
 
-def article_By_ID(articleID: int = None) -> db.Article | None:
-    return db.Article.get_by_id(articleID)
+
+def article_by_id(article_id: int = None) -> db.Article | None:
+    return db.Article.get_by_id(article_id)
+
 
 def update_loop(app: Flask) -> None:
-    """Staggered throughout the day, update info on a company thats followed"""
+    """Staggered throughout the day, update info on a company that's followed."""
     with app.app_context():
         while True:
             # get all companies in usercompany that are followed by a user

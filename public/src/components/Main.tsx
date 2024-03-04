@@ -13,6 +13,7 @@ import ViewSearch from "./ViewSearch";
 import {APP_NAME} from "../index";
 import NotificationBell from "./NotificationBell";
 import ArticleCard, {requestArticle} from "./ArticleCard";
+import ViewNotifications from "./ViewNotifications";
 
 interface IProps {
   user: IUserData;
@@ -79,6 +80,10 @@ export const Main = ({ user, onLogout, defaultTab, initialEvent }: IProps) => {
         }
 
         break;
+      case 'load-notifications':
+        setViewContent(<ViewNotifications user={user} eventCallback={handleCallback} />);
+        setSelectedTab(-1);
+        break;
       default:
         console.log(`Event: unknown event type ${event.type}`);
     }
@@ -89,12 +94,6 @@ export const Main = ({ user, onLogout, defaultTab, initialEvent }: IProps) => {
     setCachedContent("user-profile", () =>
       <UserProfile user={user} />
     );
-
-  /** Click on the notification bell. */
-  const clickNotificationBell = () => {
-    // TODO
-    console.log("Click notification bell");
-  };
 
   const tabs: (ITab & { generateContent: () => React.JSX.Element })[] = [
     {
@@ -163,7 +162,7 @@ export const Main = ({ user, onLogout, defaultTab, initialEvent }: IProps) => {
             <span onClick={clickUserName}>
               {user.name}
             </span>
-            <NotificationBell user={user} onClick={clickNotificationBell} />
+            <NotificationBell user={user} eventCallback={handleCallback} />
           </div>
         </div>
         <TabGroup
