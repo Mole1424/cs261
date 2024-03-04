@@ -202,6 +202,39 @@ async def search_companies(query: str) -> list[str]:
                     return []
 
 
+async def get_symbols(name: str) -> list[str]:
+    try:
+        async with ClientSession() as session:
+            async with session.get(
+                f"https://query2.finance.yahoo.com/v1/finance/search?q={name}"
+            ) as response:
+                tickers = []
+                if response.status == 200:
+                    data = await response.json()
+                    first_result = data["quotes"][0]["longname"]
+                    for quote in data["quotes"]:
+                        if quote["longname"] == first_result:
+                            tickers.append(quote["symbol"])
+                    return tickers
+                else:
+                    return []
+    except:
+        async with ClientSession() as session:
+            async with session.get(
+                f"https://finnhub.io/api/v1/search?q={name}&token={getenv('FINNHUB_API_KEY')}"
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    first_result = data[0]["description"]
+                    tickers = []
+                    for result in data:
+                        if result["description"] == first_result:
+                            tickers.append(result["symbol"])
+                    return tickers
+                else:
+                    return []
+
+
 def get_article_content(url: str) -> str:
     """Get the text of an article given its url."""
     try:
