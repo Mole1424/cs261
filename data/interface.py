@@ -266,8 +266,12 @@ def add_stock(symbol: str, company_id: int) -> db.Stock | None:
         company_id,
         stock_info["exchange"],
         stock_info["market_cap"],
-        stock_info["stock_day"][-1],
-        stock_info["stock_day"][-1] - stock_info["stock_day"][0],
+        stock_info["stock_day"][-1] if stock_info["stock_day"] else 0,
+        (
+            stock_info["stock_day"][-1] - stock_info["stock_day"][0]
+            if stock_info["stock_day"]
+            else 0
+        ),
         " ".join(map(str, stock_info["stock_day"])),
         " ".join(map(str, stock_info["stock_week"])),
         " ".join(map(str, stock_info["stock_month"])),
@@ -306,6 +310,15 @@ def update_company_info(company_id: int) -> None:
         symbol.stock_change = stock_info["stock_day"][-1] - stock_info["stock_day"][0]
         db.db.session.commit()
         combined_cap += symbol.market_cap
+
+        symbol.stock_price = (
+            stock_info["stock_day"][-1] if stock_info["stock_day"] else 0
+        )
+        symbol.stock_change = (
+            stock_info["stock_day"][-1] - stock_info["stock_day"][0]
+            if stock_info["stock_day"]
+            else 0
+        )
 
     company_info = run(api.get_company_info(company_symbols[0].symbol))
     for key, value in company_info.items():

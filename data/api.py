@@ -53,18 +53,26 @@ async def get_stock_info(symbol: str) -> dict:
         # TODO: multithreading/async?
         ticker = yf.Ticker(symbol)
         return {
-            "stock_day": ticker.history(period="5d", interval="1h")["Close"].to_list()[
-                -24:
-            ],
-            "stock_week": ticker.history(period="1wk", interval="1h")[
-                "Close"
-            ].to_list(),
-            "stock_month": ticker.history(period="1mo", interval="1d")[
-                "Close"
-            ].to_list(),
-            "stock_year": ticker.history(period="1y", interval="1wk")[
-                "Close"
-            ].to_list(),
+            "stock_day": (
+                ticker.history(period="5d", interval="1h")["Close"].to_list()[-24:]
+                if len(ticker.history(period="5d", interval="1h")) > 0
+                else []
+            ),
+            "stock_week": (
+                ticker.history(period="5d", interval="1h")["Close"].to_list()
+                if len(ticker.history(period="5d", interval="1h")) > 0
+                else []
+            ),
+            "stock_month": (
+                ticker.history(period="1mo", interval="1d")["Close"].to_list()
+                if len(ticker.history(period="1mo", interval="1d")) > 0
+                else []
+            ),
+            "stock_year": (
+                ticker.history(period="1y", interval="1wk")["Close"].to_list()
+                if len(ticker.history(period="1y", interval="1wk")) > 0
+                else []
+            ),
             "market_cap": ticker.info.get("marketCap", ""),
             "exchange": ticker.info.get("exchange", ""),
         }
@@ -203,6 +211,7 @@ async def search_companies(query: str) -> list[str]:
 
 
 async def get_symbols(name: str) -> list[str]:
+    print("getting symbols for", name)
     try:
         async with ClientSession() as session:
             async with session.get(
@@ -211,11 +220,33 @@ async def get_symbols(name: str) -> list[str]:
                 tickers = []
                 if response.status == 200:
                     data = await response.json()
-                    first_result = data["quotes"][0]["longname"]
+                    first_result_long = (
+                        data["quotes"][0]["longname"].lower()
+                        if data["quotes"][0]["longname"]
+                        else ""
+                    )
+                    first_result_short = (
+                        data["quotes"][0]["shortname"].lower()
+                        if data["quotes"][0]["shortname"]
+                        else ""
+                    )
                     for quote in data["quotes"]:
-                        if quote["longname"] == first_result:
+                        if (
+                            "longname" in quote
+                            and quote["longname"].lower() == first_result_long
+                        ) or (
+                            "shortname" in quote
+                            and quote["shortname"].lower() == first_result_short
+                        ):
                             tickers.append(quote["symbol"])
-                    return tickers
+                            if "longname" in quote:
+                                first_result_long = quote["longname"].lower()
+                            if "shortname" in quote:
+                                first_result_short = quote["shortname"].lower()
+                    if len(tickers) > 0:
+                        return tickers
+                    else:
+                        raise Exception
                 else:
                     return []
     except:
@@ -225,10 +256,10 @@ async def get_symbols(name: str) -> list[str]:
             ) as response:
                 if response.status == 200:
                     data = await response.json()
-                    first_result = data[0]["description"]
+                    first_result = data["result"][0]["description"].lower()
                     tickers = []
                     for result in data:
-                        if result["description"] == first_result:
+                        if result["description"].lower() == first_result:
                             tickers.append(result["symbol"])
                     return tickers
                 else:

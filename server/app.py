@@ -32,7 +32,7 @@ def create_app() -> Flask:
     # Create database tables
     with app.app_context():
         db.create_all()
-        dev = False
+        dev = True
         if dev:
             add_data()
 
