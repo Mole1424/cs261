@@ -391,6 +391,7 @@ def create_endpoints(app: Flask) -> None:
         if user.hard_ready >= 0:
             user.hard_train()
             recommendations = user.hard_recommend(count)
+            print(recommendations)
             for i in range(len(recommendations)):
                 if (int(recommendations[i]) == 0):
                     recommendations = recommendations[:i]

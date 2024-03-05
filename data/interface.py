@@ -344,7 +344,7 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
 
     news = run(api.get_news(company.name))  # get new newa
     news_in_db = company.get_articles()
-    for i in range(50):
+    for i in range(len(news)):
         if i >= len(news_in_db):
             # if new article add it
             article = db.Article(

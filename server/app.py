@@ -23,7 +23,7 @@ def create_app() -> Flask:
         static_folder="public/dist",
         template_folder="public/dist",
     )
-    app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+    app.secret_key = getenv("FLASK_SECRET")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + path.join(
         path.abspath(getcwd()), constants.DATABASE_PATH
@@ -39,7 +39,7 @@ def create_app() -> Flask:
 
         init_train_hard()
 
-        dev = True
+        dev = False
         if dev:
             add_data()
 
