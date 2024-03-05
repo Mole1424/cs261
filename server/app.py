@@ -39,7 +39,7 @@ def create_app() -> Flask:
 
         init_train_hard()
 
-        dev = False
+        dev = True
         if dev:
             add_data()
 

@@ -1,0 +1,30 @@
+@use "variables" as V;
+
+.content-notifications {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  .cards > div {
+    padding: 5px;
+    background-color: V.$secondary-bg;
+    border: 1px solid V.$primary-fg;
+    border-radius: V.$card-border-radius;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    &[data-read="false"] {
+      border-left: 5px solid V.$unread-notification-color;
+      padding-left: 3px;
+      border-radius: 0 V.$card-border-radius V.$card-border-radius 0;
+    }
+
+    > .notification-received {
+      font-style: italic;
+      font-size: 0.9em;
+    }
+  }
+}

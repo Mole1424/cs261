@@ -4,7 +4,7 @@
   padding: 5px;
   background-color: V.$secondary-bg;
   border: 1px solid V.$primary-fg;
-  border-radius: 10px;
+  border-radius: V.$card-border-radius;
 
   display: grid;
   grid-template-areas:

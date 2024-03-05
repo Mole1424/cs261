@@ -51,7 +51,7 @@ button, .btn {
     background-color: V.$secondary-bg;
     color: V.$secondary-fg;
     padding: 7px;
-    border-radius: 10px;
+    border-radius: V.$card-border-radius;
 
     display: flex;
     align-items: center;
@@ -144,7 +144,7 @@ header {
             }
 
             // Notifications info
-            > :last-child {
+            > .bell-container {
                 display: flex;
 
                 // Bell icon
@@ -161,6 +161,10 @@ header {
                     justify-content: center;
                     align-items: center;
                 }
+
+                &[data-received="true"] {
+                    animation: pulse 1s infinite;
+                }
             }
         }
     }
@@ -169,4 +173,18 @@ header {
     > nav {
         height: 40%;
     }
+}
+
+@keyframes pulse {
+  0% {
+    background-color: transparent;
+  }
+
+  50% {
+    background-color: V.$unread-notification-color;
+  }
+
+  100% {
+    background-color: transparent;
+  }
 }

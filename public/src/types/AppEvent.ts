@@ -1,5 +1,5 @@
 export interface ICbEvent {
-  type: 'load-company' | 'load-article' | 'misc';
+  type: 'load-company' | 'load-article' | 'load-notifications' | 'misc';
 }
 
 export interface ILoadCompanyEvent extends ICbEvent {
