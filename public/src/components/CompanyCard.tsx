@@ -11,7 +11,6 @@ import "styles/company-card.scss";
 interface IProps {
   company: ICompanyDetails;
   onClick: (companyId: number) => void;
-  distance?: number; // IUSerCompany distance
 }
 
 export const CompanyCard = ({ company, onClick }: IProps) => {

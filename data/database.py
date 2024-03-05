@@ -6,6 +6,12 @@ from analysis.analysis import sentiment_label, sentiment_score_to_text
 from sqlalchemy import and_
 from sqlalchemy import or_
 from data.api import get_article_content
+import pandas as pd
+import scipy.sparse as sp
+from implicit.als import AlternatingLeastSquares
+import numpy as np
+from joblib import load
+from joblib import dump
 
 # Create database
 db = SQLAlchemy()
@@ -19,12 +25,16 @@ class User(db.Model):
     name = db.Column(db.String)
     password = db.Column(db.String)
     opt_email = db.Column(db.Boolean, default=False)
+    hard_ready = db.Column(db.Integer, default=-5)
+    # Starts at -k. When the user follow k companies it is ready to be included in hard training
+    # when it exceeds k then the user needs to be retrained.
 
     def __init__(self, email: str, name: str, password: str, opt_email: bool = False):
         self.email = email
         self.name = name
         self.password = werkzeug.security.generate_password_hash(password)
         self.opt_email = opt_email
+        self.hard_ready = -5
 
     def update_password(self, password: str) -> None:
         """Update this user's password."""
@@ -84,29 +94,30 @@ class User(db.Model):
         current = db.session.query(UserCompany).where(UserCompany.user_id == self.id, UserCompany.company_id == company_id).first()
         
         if current:
+            if current.distance != -2 or self.hard_ready > 0: # Make sure the user is not refollowing
+                self.hard_ready += 1
             db.session.query(UserCompany).filter_by(user_id=self.id, company_id=company_id).update({'distance': -1})
             db.session.commit()
         else:
             db.session.add(UserCompany(user_id=self.id, company_id=company_id, distance=-1))
+            self.hard_ready += 1
             db.session.commit()
 
 
 
     def remove_company(self, company_id: int) -> None:
         """Remove a company from user."""
-        db.session.query(UserCompany).where(
-            UserCompany.user_id == self.id, UserCompany.company_id == company_id
-        ).delete()
-        db.session.commit()
+        existing_record = (
+                db.session.query(UserCompany)
+                .filter_by(user_id=self.id, company_id=company_id)
+                .first()
+            )
 
-        # Add all sectors of the pertinent company to the usersector table if they are not there already
-        company_sectors: list[CompanySector] = (
-            db.session.query(CompanySector)
-            .where(CompanySector.company_id == company_id)
-            .all()
-        )
-        for sector in company_sectors:
-            self.add_sector(sector.sector_id)
+        if existing_record:
+            if self.hard_ready > 0: # Make sure the user is not unfollowing
+                self.hard_ready += 1
+            existing_record.distance = -2
+        db.session.commit()
 
     def set_distances(self):
         non_followed = (
@@ -162,6 +173,65 @@ class User(db.Model):
             .order_by(UserCompany.distance.asc())
         )
         return recommendations[:k]
+    
+    def hard_train(self) -> bool:
+        if self.hard_ready >= 0 and self.hard_ready <= 5:
+            return False
+        user_id = self.id
+
+        user_items = db.session.query(UserCompany).filter(UserCompany.distance < 0)
+
+        users = []
+        items = []
+        feedback = []
+        for entry in user_items:
+            users.append(entry.user_id)
+            items.append(entry.company_id)
+            if entry.distance == -1:
+                feedback.append(1)
+            else:
+                feedback.append(-1)
+
+        sparse_data = sp.csr_matrix((feedback, (users, items)))
+        sparse_data1 = sp.csr_matrix((feedback, (items, users)))
+
+        model = AlternatingLeastSquares()
+        model = load('data/rec_model.npz')
+
+        model.partial_fit_users([user_id], sparse_data[[user_id]])
+
+        model.partial_fit_items(items, sparse_data1[items])
+
+        dump(model, 'data/rec_model.npz')
+
+        self.hard_ready = 0
+        db.session.commit()
+        return True
+    
+    def hard_recommend(self, k: int) -> list[int]:
+        """Return `k` user recommendations."""
+        
+        model = load('data/rec_model.npz')
+        
+
+        user_items = db.session.query(UserCompany).filter(UserCompany.distance < 0)
+
+        users = []
+        items = []
+        feedback = []
+        for entry in user_items:
+            users.append(entry.user_id)
+            items.append(entry.company_id)
+            if entry.distance == -1:
+                feedback.append(1)
+            else:
+                feedback.append(-1)
+
+        sparse_data = sp.csr_matrix((feedback, (users, items)))
+
+        recommendations, scores = model.recommend(self.id, sparse_data[[self.id]], N=k, filter_already_liked_items=True)
+        return recommendations
+
 
     def to_dict(self) -> dict:
         """Return object information to send to front-end."""

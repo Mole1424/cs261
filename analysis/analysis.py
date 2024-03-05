@@ -58,22 +58,7 @@ def recommend_hard_train(feedback):
 
     model = AlternatingLeastSquares(factors=10, regularization=0.1, iterations=50)
     model.fit(sparse_data)
-
-    # For Testing purposes
-    """
-    total_error = 0
-    count = 0
-    for user, item, true_rating in zip(test_data.row, test_data.col, test_data.data):
-        predicted_rating = model.predict(user, item)
-        error = (true_rating - predicted_rating) ** 2
-        total_error += error
-        count += 1
-
-    rmse = np.sqrt(total_error / count)
-    """
-
-    # still need to store the model
-    return model
+    model.save("hard_model.pkl")
 
 # Recommend items for a specific user
 def recommend_hard(model, userids, feedback, k):

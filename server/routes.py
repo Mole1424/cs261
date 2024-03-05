@@ -357,15 +357,29 @@ def create_endpoints(app: Flask) -> None:
                 **uc.to_dict(),
                 'company': interface.get_company_details_by_id(uc.company_id, user.id)[1]
             }
+        
+        def to_dict2(company_id: int) -> dict:
+            return {
+                'companyId': int(company_id),
+                'company': interface.get_company_details_by_id(int(company_id), user.id)[1]
+            }
 
         try:
             count = int(request.form['count'])
         except (ValueError, KeyError):
             count = 5
-
+        if user.hard_ready >= 0:
+            user.hard_train()
+            recommendations = user.hard_recommend(count)
+            for i in range(len(recommendations)):
+                if (int(recommendations[i]) == 0):
+                    recommendations = recommendations[:i]
+                    break
+            if len(recommendations) != 0:
+                return jsonify(list(map(to_dict2, recommendations)))
         user.set_distances()
         recommendations = user.soft_recommend(count)
-        return jsonify(sorted(list(map(to_dict, recommendations)), key=lambda d: d['company']['name']))
+        return jsonify(list(map(to_dict, recommendations)))
 
     @app.route("/company/follow", methods=("POST",))
     @ensure_auth

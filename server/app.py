@@ -10,6 +10,10 @@ from server.mail import mail
 from server.routes import create_endpoints
 import pandas as pd
 
+import scipy.sparse as sp
+from implicit.als import AlternatingLeastSquares
+from joblib import dump
+
 
 def create_app() -> Flask:
     # Create Flask object
@@ -19,7 +23,7 @@ def create_app() -> Flask:
         static_folder="public/dist",
         template_folder="public/dist",
     )
-    app.secret_key = getenv("FLASK_SECRET")
+    app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + path.join(
         path.abspath(getcwd()), constants.DATABASE_PATH
@@ -32,6 +36,9 @@ def create_app() -> Flask:
     # Create database tables
     with app.app_context():
         db.create_all()
+
+        init_train_hard()
+
         dev = False
         if dev:
             add_data()
@@ -91,3 +98,26 @@ def add_data():
             UserCompany(admin_user.id, get_company_details_by_symbol(symbol)[0].id, -1)
         )
     db.session.commit()
+
+
+def init_train_hard():
+    user_items = db.session.query(UserCompany).join(User, User.id == UserCompany.user_id).filter(User.hard_ready >= 0, UserCompany.distance < 0)
+    users = []
+    items = []
+    feedback = []
+    for entry in user_items:
+        users.append(entry.user_id)
+        items.append(entry.company_id)
+        if entry.distance == -1:
+            feedback.append(1)
+        else:
+            feedback.append(-1)
+
+    sparse_data = sp.csr_matrix((feedback, (users, items)))
+
+
+    model = AlternatingLeastSquares(factors=10, regularization=0.1, iterations=50)
+    model.fit(sparse_data)
+    dump(model, 'data/rec_model.npz')
+
+
