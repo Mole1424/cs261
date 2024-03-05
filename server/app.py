@@ -37,7 +37,7 @@ def create_app() -> Flask:
     with app.app_context():
         db.create_all()
 
-        dev = True
+        dev = False
         if dev:
             add_data()
 
