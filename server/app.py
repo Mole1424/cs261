@@ -37,11 +37,11 @@ def create_app() -> Flask:
     with app.app_context():
         db.create_all()
 
-        init_train_hard()
-
-        dev = False
+        dev = True
         if dev:
             add_data()
+
+        init_train_hard()
 
     # Attach the email service
     mail.app = app
@@ -76,6 +76,8 @@ def add_data():
 
     print("added admin")
 
+    symbols = []
+
     # get s&p 500 data
     snp = pd.read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
     symbols = [ticker.replace(".", "-") for ticker in snp[0]["Symbol"].tolist()]
@@ -89,6 +91,7 @@ def add_data():
     for symbol in symbols:
         print("adding", symbol)
         add_company(symbol)
+        print("% done", symbols.index(symbol) / len(symbols) * 100)
 
     print("following companies")
 
@@ -101,7 +104,11 @@ def add_data():
 
 
 def init_train_hard():
-    user_items = db.session.query(UserCompany).join(User, User.id == UserCompany.user_id).filter(User.hard_ready >= 0, UserCompany.distance < 0)
+    user_items = (
+        db.session.query(UserCompany)
+        .join(User, User.id == UserCompany.user_id)
+        .filter(User.hard_ready >= 0, UserCompany.distance < 0)
+    )
     users = []
     items = []
     feedback = []
@@ -115,9 +122,6 @@ def init_train_hard():
 
     sparse_data = sp.csr_matrix((feedback, (users, items)))
 
-
     model = AlternatingLeastSquares(factors=10, regularization=0.1, iterations=50)
     model.fit(sparse_data)
-    dump(model, 'data/rec_model.npz')
-
-
+    dump(model, "data/rec_model.npz")

@@ -251,15 +251,15 @@ def add_company(symbol: str) -> db.Company | None:
     db.db.session.add(db.CompanySector(company.id, sector.id))
     db.db.session.commit()
 
-    stock_names = run(api.get_symbols(info["name"]))
-    for stock in stock_names:
-        add_stock(stock, company.id)
+    add_stock(symbol, company.id)
 
     return company
 
 
 def add_stock(symbol: str, company_id: int) -> db.Stock | None:
     """Add a stock to a company."""
+    if db.db.session.query(db.Stock).where(db.Stock.symbol == symbol).one_or_none():
+        return None
     stock_info = run(api.get_stock_info(symbol))
     stock = db.Stock(
         symbol,
@@ -291,12 +291,16 @@ def update_company_info(company_id: int) -> None:
     if not company:
         return
 
-    company_symbols = (  # get all stocks for the company
-        db.db.session.query(db.Stock).where(db.Stock.company_id == company_id).all()
-    )
+    company_symbols = company.get_stocks()  # get all stocks for company
     combined_cap = 0  # combined market cap of all stocks
+    new_symbols = run(api.get_symbols(company.name))
 
     for symbol in company_symbols:
+        if symbol.symbol not in new_symbols:
+            db.db.session.delete(symbol)
+            db.db.session.commit()
+            continue
+
         stock_info = run(api.get_stock_info(symbol.symbol))
 
         for key, value in stock_info.items():  # update stock info
@@ -306,11 +310,6 @@ def update_company_info(company_id: int) -> None:
                 else:
                     setattr(symbol, key, value)
 
-        symbol.stock_price = stock_info["stock_day"][-1]
-        symbol.stock_change = stock_info["stock_day"][-1] - stock_info["stock_day"][0]
-        db.db.session.commit()
-        combined_cap += symbol.market_cap
-
         symbol.stock_price = (
             stock_info["stock_day"][-1] if stock_info["stock_day"] else 0
         )
@@ -319,6 +318,14 @@ def update_company_info(company_id: int) -> None:
             if stock_info["stock_day"]
             else 0
         )
+        db.db.session.commit()
+        combined_cap += symbol.market_cap if symbol.market_cap else 0
+
+    for symbol in new_symbols:
+        if not (
+            db.db.session.query(db.Stock).where(db.Stock.symbol == symbol).one_or_none()
+        ):
+            add_stock(symbol, company_id)
 
     company_info = run(api.get_company_info(company_symbols[0].symbol))
     for key, value in company_info.items():

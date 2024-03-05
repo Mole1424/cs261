@@ -13,13 +13,15 @@ async def get_company_info(symbol: str) -> dict:
     try:
         # first try to get the info from yfinance
         info = yf.Ticker(symbol).info
+        ceo = info.get("companyOfficers", "")
+        ceo = ceo[0].get("name", "") if len(ceo) > 0 else ""
         return {
             "name": info.get("longName", ""),  # use info.get() to avoid key errors
             "url": info.get("website", ""),
             "description": info.get("longBusinessSummary", ""),
             "location": f"{info.get('address1', '')} {info.get('city', '')} {info.get('state', '')} {info.get('country', '')}",
             "market_cap": info.get("marketCap", ""),
-            "ceo": info.get("companyOfficers", "")[0].get("name", ""),
+            "ceo": ceo,
             "sector": info.get("sector", ""),
         }
 
@@ -181,89 +183,60 @@ async def get_news(name: str) -> list[dict]:
 
 async def search_companies(query: str) -> list[str]:
     """Search for companies given a query."""
-    try:
-        async with ClientSession() as session:
-            async with session.get(
-                f"https://query2.finance.yahoo.com/v1/finance/search?q={query}"
-            ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    # return the first 5 results
-                    return [
-                        result["longname"] + ":" + result["symbol"]
-                        for result in data["quotes"][:5]
-                    ]
-                else:
-                    return []
-    except:
-        async with ClientSession() as session:
-            async with session.get(
-                f"https://finnhub.io/api/v1/search?q={query}&token={getenv('FINNHUB_API_KEY')}"
-            ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return [
-                        result["description"] + ":" + result["symbol"]
-                        for result in data[:5]
-                    ]
-                else:
-                    return []
+    async with ClientSession() as session:
+        async with session.get(
+            f"https://query2.finance.yahoo.com/v1/finance/search?q={query}"
+        ) as response:
+            if response.status == 200:
+                data = await response.json()
+                # return the first 5 results
+                return [
+                    result["longname"] + ":" + result["symbol"]
+                    for result in data["quotes"][:5]
+                ]
+            else:
+                return []
 
 
 async def get_symbols(name: str) -> list[str]:
     print("getting symbols for", name)
-    try:
-        async with ClientSession() as session:
-            async with session.get(
-                f"https://query2.finance.yahoo.com/v1/finance/search?q={name}"
-            ) as response:
-                tickers = []
-                if response.status == 200:
-                    data = await response.json()
-                    first_result_long = (
-                        data["quotes"][0]["longname"].lower()
-                        if data["quotes"][0]["longname"]
-                        else ""
-                    )
-                    first_result_short = (
-                        data["quotes"][0]["shortname"].lower()
-                        if data["quotes"][0]["shortname"]
-                        else ""
-                    )
-                    for quote in data["quotes"]:
-                        if (
-                            "longname" in quote
-                            and quote["longname"].lower() == first_result_long
-                        ) or (
-                            "shortname" in quote
-                            and quote["shortname"].lower() == first_result_short
-                        ):
-                            tickers.append(quote["symbol"])
-                            if "longname" in quote:
-                                first_result_long = quote["longname"].lower()
-                            if "shortname" in quote:
-                                first_result_short = quote["shortname"].lower()
-                    if len(tickers) > 0:
-                        return tickers
-                    else:
-                        raise Exception
-                else:
-                    return []
-    except:
-        async with ClientSession() as session:
-            async with session.get(
-                f"https://finnhub.io/api/v1/search?q={name}&token={getenv('FINNHUB_API_KEY')}"
-            ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    first_result = data["result"][0]["description"].lower()
-                    tickers = []
-                    for result in data:
-                        if result["description"].lower() == first_result:
-                            tickers.append(result["symbol"])
+    async with ClientSession() as session:
+        async with session.get(
+            f"https://query2.finance.yahoo.com/v1/finance/search?q={name}"
+        ) as response:
+            tickers = []
+            print(response.status)
+            if response.status == 200:
+                data = await response.json()
+                first_result_long = (
+                    data["quotes"][0]["longname"].lower()
+                    if data["quotes"][0]["longname"]
+                    else ""
+                )
+                first_result_short = (
+                    data["quotes"][0]["shortname"].lower()
+                    if data["quotes"][0]["shortname"]
+                    else ""
+                )
+                for quote in data["quotes"]:
+                    if (
+                        "longname" in quote
+                        and quote["longname"].lower() == first_result_long
+                    ) or (
+                        "shortname" in quote
+                        and quote["shortname"].lower() == first_result_short
+                    ):
+                        tickers.append(quote["symbol"])
+                        if "longname" in quote:
+                            first_result_long = quote["longname"].lower()
+                        if "shortname" in quote:
+                            first_result_short = quote["shortname"].lower()
+                if len(tickers) > 0:
                     return tickers
                 else:
-                    return []
+                    raise Exception("0 tickers found")
+            else:
+                raise Exception("bad response")
 
 
 def get_article_content(url: str) -> str:
