@@ -8,6 +8,7 @@ import axios, {AxiosResponse} from "axios";
 import {headerFormData} from "../constants";
 import IViewProps from "../types/IViewProps";
 import {ILoadCompanyEvent} from "../types/AppEvent";
+import {formatNumber} from "../util";
 
 export const ViewFollowing = ({ eventCallback }: IViewProps) => {
   const [companies, setCompanies] = useState<ICompanyDetails[]>([]);
@@ -25,11 +26,19 @@ export const ViewFollowing = ({ eventCallback }: IViewProps) => {
 
   return (
     <main className={'content-following content-cards'}>
-      <div className={'cards'}>
-        {companies.map(company =>
-          <CompanyCard key={company.id} company={company} onClick={clickCompanyCard} />
+      <span className={'title-text'}>
+        You are following {formatNumber(companies.length)} {companies.length === 1 ? "company" : "companies"}
+      </span>
+
+      {companies.length === 0
+        ? <span>Click on the <em>Follow</em> button on a company card to follow a company.</span>
+        : (
+          <div className={'cards'}>
+            {companies.map(company =>
+              <CompanyCard key={company.id} company={company} onClick={clickCompanyCard} />
+            )}
+          </div>
         )}
-      </div>
     </main>
   );
 };

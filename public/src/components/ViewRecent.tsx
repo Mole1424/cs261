@@ -5,6 +5,7 @@ import ArticleCard from "./ArticleCard";
 
 import "styles/view-cards.scss";
 import IViewProps from "../types/IViewProps";
+import {formatNumber} from "../util";
 
 export const ViewRecent = ({ eventCallback }: IViewProps) => {
   const [newsArticles, setNewsArticles] = useState<INewsArticle[]>([]);
@@ -22,6 +23,10 @@ export const ViewRecent = ({ eventCallback }: IViewProps) => {
 
   return (
     <main className={'content-recent content-cards'}>
+      <span className={'title-text'}>
+        Here are some recent news articles.
+      </span>
+
       <div className={'cards'}>
         {newsArticles.map(article =>
           <ArticleCard key={article.id} article={article} eventCallback={eventCallback} />

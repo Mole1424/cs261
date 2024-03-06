@@ -33,20 +33,24 @@ export const ViewNotifications = ({ }: IViewProps) => {
 
   return (
     <main className={'content-notifications content-cards'}>
-      <div className={'cards'}>
-        {notifications.map(notification =>
-          <div
-            key={notification.id}
-            className={'notification'}
-            data-id={notification.id}
-            data-read={notification.read}
-            onClick={() => clickNotification(notification)}
-          >
-            <span className={'notification-received'}>Received {formatDateTime(new Date(notification.received))}</span>
-            <span className={'notification-message'}>{notification.message}</span>
-          </div>
+      {notifications.length === 0
+        ? <em>You have no notifications.</em>
+        : (
+        <div className={'cards'}>
+          {notifications.map(notification =>
+            <div
+              key={notification.id}
+              className={'notification'}
+              data-id={notification.id}
+              data-read={notification.read}
+              onClick={() => clickNotification(notification)}
+            >
+              <span className={'notification-received'}>Received {formatDateTime(new Date(notification.received))}</span>
+              <span className={'notification-message'}>{notification.message}</span>
+            </div>
+          )}
+        </div>
         )}
-      </div>
     </main>
   );
 };

@@ -1,6 +1,5 @@
-import {IUserData} from "../types/IUserData";
 import React, {useEffect, useState} from "react";
-import {requestMarkAllAsRead, requestNotificationStats} from "./ViewNotifications";
+import {requestNotificationStats} from "./ViewNotifications";
 import {formatNumber} from "../util";
 
 import BellLogo from "assets/bell.svg";
@@ -9,8 +8,8 @@ import IViewProps from "../types/IViewProps";
 import {ICbEvent} from "../types/AppEvent";
 
 export const NotificationBell = ({ eventCallback }: IViewProps) => {
-  const [receivedNotification, setReceivedNotification] = useState(true);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(1);
+  const [receivedNotification, setReceivedNotification] = useState(false);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   /** Logic loop. */
   const updateDetails = async () => {
@@ -35,6 +34,8 @@ export const NotificationBell = ({ eventCallback }: IViewProps) => {
   };
 
   useEffect(() => {
+    void updateDetails();
+
     const intervalId = setInterval(updateDetails, 30_000);
 
     return () => clearInterval(intervalId);

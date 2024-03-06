@@ -6,7 +6,6 @@ import CompanyCard from "./CompanyCard";
 import {ILoadCompanyEvent} from "../types/AppEvent";
 
 import "styles/view-cards.scss";
-import "styles/view-for-you.scss";
 import {headerFormData} from "../constants";
 
 export const ViewForYou = ({ eventCallback }: IViewProps) => {
@@ -44,7 +43,7 @@ export const ViewForYou = ({ eventCallback }: IViewProps) => {
 
   return (
     <main className={'content-for-you content-cards'}>
-      <span>
+      <span className={'title-text'}>
         Here are some companies you may be interested in.
       </span>
       <div className={'cards'}>

@@ -44,6 +44,9 @@ export const ViewPopular = ({ eventCallback }: IViewProps) => {
 
   return (
     <main className={'content-popular content-cards'}>
+      <span className={'title-text'}>
+        Here are some companies that are popular at the moment.
+      </span>
       <div className={'cards'}>
         {companies.map(company =>
           <CompanyCard key={company.id} company={company} onClick={clickCompanyCard} />
