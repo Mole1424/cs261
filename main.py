@@ -9,7 +9,7 @@ if __name__ == "__main__":
     options = argv[1:]
 
     # Load .env file into environment
-    load_dotenv("env")
+    load_dotenv()
 
     # Create and launch Flask application
     app = create_app()
