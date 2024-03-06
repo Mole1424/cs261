@@ -8,9 +8,22 @@
   .search-options {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     flex-direction: column;
     gap: 10px;
     margin: 5% 0;
+
+    > span *:not(:last-child) {
+      margin-right: 10px;
+    }
+
+    .search-button-container {
+      width: 50%;
+      margin: 0 auto;
+
+      > button {
+        width: 100%;
+      }
+    }
   }
 }

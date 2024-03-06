@@ -7,9 +7,9 @@ import CompanyCard from "./CompanyCard";
 import {ILoadCompanyEvent} from "../types/AppEvent";
 import {requestSectors} from "./UserProfile";
 import {arrayRemove} from "../util";
+import ISector from "../types/ISector";
 
 import "styles/view-search.scss";
-import ISector from "../types/ISector";
 import PlusIcon from "assets/plus.svg";
 import CrossIcon from "assets/cross.svg";
 
@@ -96,8 +96,8 @@ const SearchOptions = (props: ISearchOptionsProps) => {
   const [fieldSectors, setFieldSectors] = useState<number[]>([]);
   const [isAddingSector, setIsAddingSector] = useState(false);
 
-  /** Trigger a search when any of the fields change. */
-  useEffect(() => {
+  /** Request companies with entered parameters. */
+  const callOnChange = () => {
     const payload = {} as ISearchOptions;
 
     if (fieldCeo.length > 0) payload.ceo = fieldCeo;
@@ -109,8 +109,9 @@ const SearchOptions = (props: ISearchOptionsProps) => {
     payload.stockPriceRange = [fieldStockPriceLower, fieldStockPriceUpper];
 
     props.onChange(payload);
-  }, [fieldCeo, fieldCompanyName, fieldSentimentLower, fieldSentimentUpper, fieldMarketCapLower,
-    fieldMarketCapUpper, fieldStockPriceLower, fieldStockPriceUpper, fieldSectors]);
+  };
+
+  useEffect(callOnChange, []);
 
   /** Add new sector. */
   const addSector = (sectorId: number) => {
@@ -121,71 +122,79 @@ const SearchOptions = (props: ISearchOptionsProps) => {
   return (
     <div className={'search-options'}>
       <span className={'search-ceo'}>
-        Company CEO:
+        <span>Company CEO:</span>
         <input type="text" placeholder={'CEO'} onChange={e => setFieldCeo(e.target.value.trim())} />
       </span>
 
       <span className={'search-name'}>
-        Company name:
+        <span>Company name:</span>
         <input type="text" placeholder={'Company Name'} onChange={e => setFieldCompanyName(e.target.value.trim())} />
       </span>
 
       <span className={'search-sectors'}>
-        Sectors:
-        <span>
-          {fieldSectors.map((sectorId, index) =>
-            <span key={sectorId}>
-              <select defaultValue={sectorId} onChange={e => setFieldSectors(ss => {
-                const copy = [...ss];
-                copy[index] = sectorId;
-                return copy;
-              })}>
-                {props.sectors.map(sector =>
-                  <option key={sector.id} value={sector.id}>{sector.name}</option>
-                )}
-              </select>
-              <img src={CrossIcon} alt={'Remove'} onClick={() => {
-                setFieldSectors(ss => arrayRemove([...ss], sectorId));
-              }} className={'icon style-red'} />
-            </span>
-          )}
-          {isAddingSector
-            ? <>
-              <select defaultValue={'_default'} onChange={e => {
-                addSector(+e.target.value);
-                setIsAddingSector(false);
-              }}>
-                <option value="_default" disabled>Select One</option>
-                {props.sectors.map(({ id, name }) => fieldSectors.indexOf(id) === -1 && <option value={id} key={id}>{name}</option>)}
-              </select>
-              <img src={CrossIcon} alt={'Cancel'} onClick={() => setIsAddingSector(false)} className={'icon style-red'} />
-            </>
-            : <img src={PlusIcon} alt={'Add new sector'} onClick={() => setIsAddingSector(true)} className={'icon'} />
-          }
-        </span>
+        <span>Sectors:</span>
+        {fieldSectors.map((sectorId, index) =>
+          <span key={sectorId}>
+            <select defaultValue={sectorId} onChange={e => setFieldSectors(ss => {
+              const copy = [...ss];
+              copy[index] = sectorId;
+              return copy;
+            })}>
+              {props.sectors.map(sector =>
+                <option key={sector.id} value={sector.id}>{sector.name}</option>
+              )}
+            </select>
+            <img src={CrossIcon} alt={'Remove'} onClick={() => {
+              setFieldSectors(ss => arrayRemove([...ss], sectorId));
+            }} className={'icon style-red'} />
+          </span>
+        )}
+        {isAddingSector
+          ? <>
+            <select defaultValue={'_default'} onChange={e => {
+              addSector(+e.target.value);
+              setIsAddingSector(false);
+            }}>
+              <option value="_default" disabled>Select One</option>
+              {props.sectors.map(({ id, name }) => fieldSectors.indexOf(id) === -1 && <option value={id} key={id}>{name}</option>)}
+            </select>
+            <img src={CrossIcon} alt={'Cancel'} onClick={() => setIsAddingSector(false)} className={'icon style-red'} />
+          </>
+          : <img src={PlusIcon} alt={'Add new sector'} onClick={() => setIsAddingSector(true)} className={'icon'} />
+        }
       </span>
 
       <span className={'search-sentiment'}>
-        Sentiment score:
+        <span>Sentiment score:</span>
         <span className={'range-slider'}>
           <input value={fieldSentimentLower} min={-1} max={1} step={0.1} type="range" onChange={e => setFieldSentimentLower(+e.target.value)} />
           <input value={fieldSentimentUpper} min={-1} max={1} step={0.1} type="range" onChange={e => setFieldSentimentUpper(+e.target.value)} />
-          <span>{fieldSentimentLower} to {fieldSentimentUpper}</span>
         </span>
+        <span>{fieldSentimentLower} to {fieldSentimentUpper}</span>
       </span>
 
       <span className={'search-market-cap'}>
-        Market capitalisation:
-        $ <input type="number" value={fieldMarketCapLower} min={0} onChange={e => setFieldMarketCapLower(+e.target.value)} />
-        to
-        $ <input type="number" value={fieldMarketCapUpper} onChange={e => setFieldMarketCapUpper(+e.target.value)} />
+        <span>Market capitalisation:</span>
+        <span>
+          $ <input type="number" value={fieldMarketCapLower} min={0} onChange={e => setFieldMarketCapLower(+e.target.value)} />
+        </span>
+        <span>to</span>
+        <span>
+          $ <input type="number" value={fieldMarketCapUpper} onChange={e => setFieldMarketCapUpper(+e.target.value)} />
+        </span>
       </span>
 
       <span className={'search-stock-price'}>
-        Stock price:
-        $ <input type="number" value={fieldStockPriceLower} min={0} onChange={e => setFieldStockPriceLower(+e.target.value)} />
-        to
-        $ <input type="number" value={fieldStockPriceUpper} onChange={e => setFieldStockPriceUpper(+e.target.value)} />
+        <span>Stock price:</span>
+        <span>
+          $ <input type="number" value={fieldStockPriceLower} min={0} onChange={e => setFieldStockPriceLower(+e.target.value)} />
+        </span>
+        <span>to</span>
+        <span>$ <input type="number" value={fieldStockPriceUpper} onChange={e => setFieldStockPriceUpper(+e.target.value)} /></span>
+      </span>
+
+      <span className={'search-button-container'}>
+        <button onClick={callOnChange}>Search</button>
       </span>
     </div>
   );

@@ -210,11 +210,13 @@ def search_companies(
             )
         )
     result = query.all()
-    #if less than 10 results from inside db, then call api
-    if len(result) < 10 and len(name) > 0:
+
+    # If less than 10 results from inside db, call api
+    if len(result) < 10 and name is not None and len(name) > 0:
         api_call = run(api.search_companies(name))
         companies = [add_company(ticker) for ticker in api_call]
         result = result + companies
+
     return result
 
 
