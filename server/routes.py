@@ -93,9 +93,7 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def user_delete(user: User):
         """Delete the user's account."""
-        db.session.delete(user)
-        db.session.commit()
-
+        interface.delete_user(user)
         del session[USER_ID]
         return "", 200
 
@@ -356,7 +354,7 @@ def create_endpoints(app: Flask) -> None:
     @app.route("/news/recent", methods=("GET",))
     def news_recent():
         """Defaults to 10 most recent articles"""
-        return jsonify(list(map(Article.to_dict, interface.recent_articles())))
+        return jsonify(interface.recent_articles())
 
     @app.route("/user/for-you", methods=("POST",))
     @ensure_auth
@@ -481,8 +479,7 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def company_search(user: User):
         """Search companies."""
-        print(request.form)
-
+        
         # ceo?: string
         ceo: str | None = get_form_or_default('ceo', None)
 

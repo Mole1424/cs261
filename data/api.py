@@ -190,10 +190,16 @@ async def search_companies(query: str) -> list[str]:
             if response.status == 200:
                 data = await response.json()
                 # return the first 5 results
-                return [
-                    result["longname"] + ":" + result["symbol"]
-                    for result in data["quotes"][:5]
-                ]
+                
+                result_list = []
+                for result in data["quotes"][:10]:
+                    try:
+                        longname = result["longname"]
+                        if longname != "":
+                            result_list.append(result["symbol"])
+                    except KeyError:
+                        pass
+                return result_list
             else:
                 return []
 

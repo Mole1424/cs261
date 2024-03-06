@@ -1,5 +1,5 @@
 from asyncio import run
-from typing import Callable
+from typing import Callable, Optional
 
 import data.api as api
 import data.database as db
@@ -162,7 +162,7 @@ def search_companies(
     market_cap: FloatRange = None,
 ) -> list[db.Company]:
     """Search companies given the following parameters."""
-
+    
     query = db.db.session.query(db.Company)
 
     # Filter by CEO
@@ -209,8 +209,13 @@ def search_companies(
                 db.Company.sentiment < sentiment[1],
             )
         )
-
-    return query.all()
+    result = query.all()
+    #if less than 10 results from inside db, then call api
+    if len(result) < 10 and len(name) > 0:
+        api_call = run(api.search_companies(name))
+        companies = [add_company(ticker) for ticker in api_call]
+        result = result + companies
+    return result
 
 
 def add_company(symbol: str) -> db.Company | None:
@@ -227,7 +232,7 @@ def add_company(symbol: str) -> db.Company | None:
 
     info = run(api.get_company_info(symbol))
     company = db.Company(
-        name=info["name"],
+        name=info["name"] + ' - (' + symbol + ")",
         url=info["url"],
         description=info["description"],
         location=info["location"],
@@ -374,12 +379,23 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
     return news
 
 
-def recent_articles(count: int = 10) -> list[db.Article] | None:
-    return db.db.session.query(db.Article).order_by(desc(db.Article.date)).limit(count)
-
+def recent_articles(count: int = 10) -> Optional[list[dict]]:
+    return list(map(db.Article.to_dict, db.db.session.query(db.Article).order_by(desc(db.Article.date)).limit(count)))
 
 def article_by_id(article_id: int = None) -> db.Article | None:
     return db.Article.get_by_id(article_id)
+
+#TODO
+def delete_user(user: db.User) -> bool:
+    try:
+        db.db.session.query(db.UserNotification).filter(db.UserNotification.user_id == user.id).delete()
+        db.db.session.query(db.UserSector).filter(db.UserSector.user_id == user.id).delete()
+        db.db.session.query(db.UserCompany).filter(db.UserCompany.user_id == user.id).delete()
+        db.db.session.commit()
+        return True
+    except:
+        return False
+    
 
 
 def update_loop(app: Flask) -> None:
