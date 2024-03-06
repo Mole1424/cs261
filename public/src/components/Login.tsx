@@ -63,7 +63,7 @@ export const Login = ({ onLoginSuccess }: IProps) => {
 
         {isSigningUp && <span>
             <input type="checkbox" checked={optEmail} onChange={() => setOptEmail(!optEmail)} />
-            Opt into the daily email round-up
+            Opt into daily email round-up
         </span>}
 
         {isSigningUp
@@ -71,7 +71,7 @@ export const Login = ({ onLoginSuccess }: IProps) => {
           : <button onClick={onClickLogin}>Log In</button>
         }
 
-        {!isSigningUp && <p>Don't have an account? <span className={'link'} onClick={() => {
+        {!isSigningUp && <p>Not got an account? <span className={'link'} onClick={() => {
           setErrorMessage(null);
           setIsSigningUp(true);
         }}>Sign up</span></p>}
