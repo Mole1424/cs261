@@ -53,7 +53,6 @@ export const ViewForYou = ({ eventCallback }: IViewProps) => {
             key={data.companyId}
             company={data.company}
             onClick={clickCompanyCard}
-            distance={data.distance}
           />
         )}
         {(receivedCompanyCount === companyCount) && (

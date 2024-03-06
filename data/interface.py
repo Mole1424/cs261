@@ -1,5 +1,5 @@
 from asyncio import run
-from typing import Callable
+from typing import Callable, Optional
 
 import data.api as api
 import data.database as db
@@ -162,7 +162,7 @@ def search_companies(
     market_cap: FloatRange = None,
 ) -> list[db.Company]:
     """Search companies given the following parameters."""
-
+    
     query = db.db.session.query(db.Company)
 
     # Filter by CEO
@@ -209,8 +209,13 @@ def search_companies(
                 db.Company.sentiment < sentiment[1],
             )
         )
-
-    return query.all()
+    result = query.all()
+    #if less than 10 results from inside db, then call api
+    if len(result) < 10 and len(name) > 0:
+        api_call = run(api.search_companies(name))
+        companies = [add_company(ticker) for ticker in api_call]
+        result = result + companies
+    return result
 
 
 def add_company(symbol: str) -> db.Company | None:
@@ -227,7 +232,7 @@ def add_company(symbol: str) -> db.Company | None:
 
     info = run(api.get_company_info(symbol))
     company = db.Company(
-        name=info["name"],
+        name=info["name"] + ' - (' + symbol + ")",
         url=info["url"],
         description=info["description"],
         location=info["location"],
@@ -251,15 +256,15 @@ def add_company(symbol: str) -> db.Company | None:
     db.db.session.add(db.CompanySector(company.id, sector.id))
     db.db.session.commit()
 
-    stock_names = run(api.get_symbols(info["name"]))
-    for stock in stock_names:
-        add_stock(stock, company.id)
+    add_stock(symbol, company.id)
 
     return company
 
 
 def add_stock(symbol: str, company_id: int) -> db.Stock | None:
     """Add a stock to a company."""
+    if db.db.session.query(db.Stock).where(db.Stock.symbol == symbol).one_or_none():
+        return None
     stock_info = run(api.get_stock_info(symbol))
     stock = db.Stock(
         symbol,
@@ -291,12 +296,16 @@ def update_company_info(company_id: int) -> None:
     if not company:
         return
 
-    company_symbols = (  # get all stocks for the company
-        db.db.session.query(db.Stock).where(db.Stock.company_id == company_id).all()
-    )
+    company_symbols = company.get_stocks()  # get all stocks for company
     combined_cap = 0  # combined market cap of all stocks
+    new_symbols = run(api.get_symbols(company.name))
 
     for symbol in company_symbols:
+        if symbol.symbol not in new_symbols:
+            db.db.session.delete(symbol)
+            db.db.session.commit()
+            continue
+
         stock_info = run(api.get_stock_info(symbol.symbol))
 
         for key, value in stock_info.items():  # update stock info
@@ -306,11 +315,6 @@ def update_company_info(company_id: int) -> None:
                 else:
                     setattr(symbol, key, value)
 
-        symbol.stock_price = stock_info["stock_day"][-1]
-        symbol.stock_change = stock_info["stock_day"][-1] - stock_info["stock_day"][0]
-        db.db.session.commit()
-        combined_cap += symbol.market_cap
-
         symbol.stock_price = (
             stock_info["stock_day"][-1] if stock_info["stock_day"] else 0
         )
@@ -319,6 +323,14 @@ def update_company_info(company_id: int) -> None:
             if stock_info["stock_day"]
             else 0
         )
+        db.db.session.commit()
+        combined_cap += symbol.market_cap if symbol.market_cap else 0
+
+    for symbol in new_symbols:
+        if not (
+            db.db.session.query(db.Stock).where(db.Stock.symbol == symbol).one_or_none()
+        ):
+            add_stock(symbol, company_id)
 
     company_info = run(api.get_company_info(company_symbols[0].symbol))
     for key, value in company_info.items():
@@ -344,7 +356,7 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
 
     news = run(api.get_news(company.name))  # get new newa
     news_in_db = company.get_articles()
-    for i in range(50):
+    for i in range(len(news)):
         if i >= len(news_in_db):
             # if new article add it
             article = db.Article(
@@ -367,12 +379,23 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
     return news
 
 
-def recent_articles(count: int = 10) -> list[db.Article] | None:
-    return db.db.session.query(db.Article).order_by(desc(db.Article.date)).limit(count)
-
+def recent_articles(count: int = 10) -> Optional[list[dict]]:
+    return list(map(db.Article.to_dict, db.db.session.query(db.Article).order_by(desc(db.Article.date)).limit(count)))
 
 def article_by_id(article_id: int = None) -> db.Article | None:
     return db.Article.get_by_id(article_id)
+
+#TODO
+def delete_user(user: db.User) -> bool:
+    try:
+        db.db.session.query(db.UserNotification).filter(db.UserNotification.user_id == user.id).delete()
+        db.db.session.query(db.UserSector).filter(db.UserSector.user_id == user.id).delete()
+        db.db.session.query(db.UserCompany).filter(db.UserCompany.user_id == user.id).delete()
+        db.db.session.commit()
+        return True
+    except:
+        return False
+    
 
 
 def update_loop(app: Flask) -> None:

@@ -93,9 +93,7 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def user_delete(user: User):
         """Delete the user's account."""
-        db.session.delete(user)
-        db.session.commit()
-
+        interface.delete_user(user)
         del session[USER_ID]
         return "", 200
 
@@ -356,7 +354,7 @@ def create_endpoints(app: Flask) -> None:
     @app.route("/news/recent", methods=("GET",))
     def news_recent():
         """Defaults to 10 most recent articles"""
-        return jsonify(list(map(Article.to_dict, interface.recent_articles())))
+        return jsonify(interface.recent_articles())
 
     @app.route("/user/for-you", methods=("POST",))
     @ensure_auth
@@ -377,15 +375,30 @@ def create_endpoints(app: Flask) -> None:
                 **uc.to_dict(),
                 'company': interface.get_company_details_by_id(uc.company_id, user.id)[1]
             }
+        
+        def to_dict2(company_id: int) -> dict:
+            return {
+                'companyId': int(company_id),
+                'company': interface.get_company_details_by_id(int(company_id), user.id)[1]
+            }
 
         try:
             count = int(request.form['count'])
         except (ValueError, KeyError):
             count = 5
-
+        if user.hard_ready >= 0:
+            user.hard_train()
+            recommendations = user.hard_recommend(count)
+            print(recommendations)
+            for i in range(len(recommendations)):
+                if (int(recommendations[i]) == 0):
+                    recommendations = recommendations[:i]
+                    break
+            if len(recommendations) != 0:
+                return jsonify(list(map(to_dict2, recommendations)))
         user.set_distances()
         recommendations = user.soft_recommend(count)
-        return jsonify(sorted(list(map(to_dict, recommendations)), key=lambda d: d['company']['name']))
+        return jsonify(list(map(to_dict, recommendations)))
 
     @app.route("/company/follow", methods=("POST",))
     @ensure_auth
@@ -466,8 +479,7 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def company_search(user: User):
         """Search companies."""
-        print(request.form)
-
+        
         # ceo?: string
         ceo: str | None = get_form_or_default('ceo', None)
 
