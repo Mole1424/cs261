@@ -7,6 +7,12 @@ This application requires `Python 3.12`, `pip` and `Node.js` to be installed.
 - To download necessary Python libraries, run `pip install -r requirements.txt`.
 - To download necessary Node libraries, run `npm install`.
 
+### Environment Variables
+
+The application requires a `.env` file to be present in the root directory.
+
+The file should contain variables like those in exampleenv
+
 ## Building and Execution
 To build the front-end code, please run `npm run build`.
 

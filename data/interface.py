@@ -162,7 +162,7 @@ def search_companies(
     market_cap: FloatRange = None,
 ) -> list[db.Company]:
     """Search companies given the following parameters."""
-    
+
     query = db.db.session.query(db.Company)
 
     # Filter by CEO
@@ -234,7 +234,7 @@ def add_company(symbol: str) -> db.Company | None:
 
     info = run(api.get_company_info(symbol))
     company = db.Company(
-        name=info["name"] + ' - (' + symbol + ")",
+        name=info["name"] + " - (" + symbol + ")",
         url=info["url"],
         description=info["description"],
         location=info["location"],
@@ -300,7 +300,8 @@ def update_company_info(company_id: int) -> None:
 
     company_symbols = company.get_stocks()  # get all stocks for company
     combined_cap = 0  # combined market cap of all stocks
-    new_symbols = run(api.get_symbols(company.name))
+    company_name = company.name.split("-")[0].strip()
+    new_symbols = run(api.get_symbols(company_name))
 
     for symbol in company_symbols:
         if symbol.symbol not in new_symbols:
@@ -356,7 +357,7 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
     ):
         return company.get_articles()
 
-    news = run(api.get_news(company.name))  # get new newa
+    news = run(api.get_news(company.name.split("-")[0].strip()))  # get new newa
     news_in_db = company.get_articles()
     for i in range(len(news)):
         if i >= len(news_in_db):
@@ -382,22 +383,36 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
 
 
 def recent_articles(count: int = 10) -> Optional[list[dict]]:
-    return list(map(db.Article.to_dict, db.db.session.query(db.Article).order_by(desc(db.Article.date)).limit(count)))
+    return list(
+        map(
+            db.Article.to_dict,
+            db.db.session.query(db.Article)
+            .order_by(desc(db.Article.date))
+            .limit(count),
+        )
+    )
+
 
 def article_by_id(article_id: int = None) -> db.Article | None:
     return db.Article.get_by_id(article_id)
 
-#TODO
+
+# TODO
 def delete_user(user: db.User) -> bool:
     try:
-        db.db.session.query(db.UserNotification).filter(db.UserNotification.user_id == user.id).delete()
-        db.db.session.query(db.UserSector).filter(db.UserSector.user_id == user.id).delete()
-        db.db.session.query(db.UserCompany).filter(db.UserCompany.user_id == user.id).delete()
+        db.db.session.query(db.UserNotification).filter(
+            db.UserNotification.user_id == user.id
+        ).delete()
+        db.db.session.query(db.UserSector).filter(
+            db.UserSector.user_id == user.id
+        ).delete()
+        db.db.session.query(db.UserCompany).filter(
+            db.UserCompany.user_id == user.id
+        ).delete()
         db.db.session.commit()
         return True
     except:
         return False
-    
 
 
 def update_loop(app: Flask) -> None:

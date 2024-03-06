@@ -151,7 +151,7 @@ async def get_news(name: str) -> list[dict]:
                                 "headline": article["title"],
                                 "publisher": article["clean_url"],
                                 "date": datetime.strptime(
-                                    article["published_date"], "%Y-%m-%dT%H:%M:%SZ"
+                                    article["published_date"], "%Y-%m-%d %H:%M:%S"
                                 ),
                                 "summary": article["excerpt"],
                             }
@@ -173,7 +173,7 @@ async def get_news(name: str) -> list[dict]:
                                 "headline": article["title"],
                                 "publisher": article["source"]["name"],
                                 "date": datetime.strptime(
-                                    article["publishedAt"], "%Y-%m-%d %H:%M:%S"
+                                    article["publishedAt"], "%Y-%m-%dT%H:%M:%SZ"
                                 ),
                                 "summary": summary,
                             }
@@ -190,7 +190,7 @@ async def search_companies(query: str) -> list[str]:
             if response.status == 200:
                 data = await response.json()
                 # return the first 5 results
-                
+
                 result_list = []
                 for result in data["quotes"][:10]:
                     try:
@@ -211,7 +211,6 @@ async def get_symbols(name: str) -> list[str]:
             f"https://query2.finance.yahoo.com/v1/finance/search?q={name}"
         ) as response:
             tickers = []
-            print(response.status)
             if response.status == 200:
                 data = await response.json()
                 first_result_long = (
