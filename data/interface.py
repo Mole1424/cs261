@@ -12,7 +12,9 @@ from flask import Flask
 FloatRange = tuple[float, float]
 
 
-def string_to_list(string: str, convert_fn: Callable[[str], any], seperator: str = ",") -> list:
+def string_to_list(
+    string: str, convert_fn: Callable[[str], any], seperator: str = ","
+) -> list:
     """Attempt to convert the input string to a list. String is in the form 'x<separator>y<separator>z...]. `convert_fn`
     is called on each element."""
 
@@ -101,13 +103,19 @@ def get_company_details(
 
     details = {
         **company.to_dict(),
-        "sectors": list(
-            map(
-                lambda x: x.sector.to_dict(),
-                db.CompanySector.get_by_company(company.id),
-            )
-        ),
     }
+
+    company_sectors = db.CompanySector.get_by_company(company.id)
+    sectors = []
+    for sector_db in company_sectors:
+        sector = (
+            db.db.session.query(db.Sector)
+            .where(db.Sector.id == sector_db.sector_id)
+            .one_or_none()
+        )
+        if sector:
+            sectors.append(sector)
+    details["sectors"] = [sector.to_dict() for sector in sectors]
 
     # Provide full stock data?
     stocks = db.Stock.get_all_by_company(company.id)
