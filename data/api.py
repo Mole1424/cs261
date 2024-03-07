@@ -155,6 +155,7 @@ async def get_news(name: str) -> list[dict]:
                                     article["published_date"], "%Y-%m-%d %H:%M:%S"
                                 ),
                                 "summary": article["excerpt"],
+                                "full_text": article["summary"],
                             }
                         )
     except:
@@ -177,6 +178,7 @@ async def get_news(name: str) -> list[dict]:
                                     article["publishedAt"], "%Y-%m-%dT%H:%M:%SZ"
                                 ),
                                 "summary": summary,
+                                "full_text": get_article_content(article["url"]),
                             }
                         )
     return articles

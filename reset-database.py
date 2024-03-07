@@ -8,6 +8,7 @@ from time import sleep
 from data.database import db, User, UserCompany
 from data.interface import add_company, get_company_details_by_symbol
 from server import constants
+from datetime import datetime
 
 
 def reset_database():
@@ -40,7 +41,7 @@ def reset_database():
 
     for symbol in symbols:
         print("adding", symbol)
-        add_company(symbol)
+        add_company(symbol, True)
         sleep(1)
         print("% done", symbols.index(symbol) / len(symbols) * 100)
 
@@ -71,5 +72,6 @@ if __name__ == "__main__":
 
     with app.app_context():
         db.create_all()
+        start_time = datetime.now()
         reset_database()
-        
+    print("Time taken:", datetime.now() - start_time)

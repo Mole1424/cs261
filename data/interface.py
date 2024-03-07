@@ -8,6 +8,8 @@ from datetime import datetime
 from time import sleep
 from flask import Flask
 
+from analysis.analysis import sentiment_label
+
 
 FloatRange = tuple[float, float]
 
@@ -244,7 +246,7 @@ def search_companies(
     return result
 
 
-def add_company(symbol: str) -> db.Company | None:
+def add_company(symbol: str, get_news=False) -> db.Company | None:
     # check if company exists
     db_symbol = (
         db.db.session.query(db.Stock).where(db.Stock.symbol == symbol).one_or_none()
@@ -284,6 +286,9 @@ def add_company(symbol: str) -> db.Company | None:
 
     add_stock(symbol, company.id)
 
+    if get_news:
+        get_company_articles(company.id)
+        company.update_sentiment()
     return company
 
 
@@ -366,6 +371,7 @@ def update_company_info(company_id: int) -> None:
     company.market_cap = combined_cap
     db.db.session.commit()
     get_company_articles(company_id)
+    company.update_sentiment()
 
 
 def get_company_articles(company_id: int) -> list[db.Article] | None:
@@ -382,9 +388,7 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
         if len(articles) > 0:
             return articles
 
-    print("Getting new articles")
     news = run(api.get_news(company.name))  # get new news
-    print(news)
     news_in_db = company.get_articles()
     for i in range(len(news)):
         if i >= len(news_in_db):
@@ -398,6 +402,7 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
             )
             db.db.session.add(article)
             db.db.session.commit()
+            article.update_sentiment(sentiment_label(news[i]["full_text"])["score"])
             db.db.session.add(db.ArticleCompany(article.id, company_id))
             db.db.session.commit()
         else:
@@ -406,7 +411,6 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
                 if value != "":
                     setattr(news_in_db[i], key, value)
     db.db.session.commit()
-    print("Done (news)")
     return news
 
 

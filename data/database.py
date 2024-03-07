@@ -90,30 +90,38 @@ class User(db.Model):
     def add_company(self, company_id: int) -> None:
         """Add a company to user."""
 
-        current = db.session.query(UserCompany).where(UserCompany.user_id == self.id, UserCompany.company_id == company_id).first()
-        
+        current = (
+            db.session.query(UserCompany)
+            .where(UserCompany.user_id == self.id, UserCompany.company_id == company_id)
+            .first()
+        )
+
         if current:
-            if current.distance != -2 or self.hard_ready > 0: # Make sure the user is not refollowing
+            if (
+                current.distance != -2 or self.hard_ready > 0
+            ):  # Make sure the user is not refollowing
                 self.hard_ready += 1
-            db.session.query(UserCompany).filter_by(user_id=self.id, company_id=company_id).update({'distance': -1})
+            db.session.query(UserCompany).filter_by(
+                user_id=self.id, company_id=company_id
+            ).update({"distance": -1})
             db.session.commit()
         else:
-            db.session.add(UserCompany(user_id=self.id, company_id=company_id, distance=-1))
+            db.session.add(
+                UserCompany(user_id=self.id, company_id=company_id, distance=-1)
+            )
             self.hard_ready += 1
             db.session.commit()
-
-
 
     def remove_company(self, company_id: int) -> None:
         """Remove a company from user."""
         existing_record = (
-                db.session.query(UserCompany)
-                .filter_by(user_id=self.id, company_id=company_id)
-                .first()
-            )
+            db.session.query(UserCompany)
+            .filter_by(user_id=self.id, company_id=company_id)
+            .first()
+        )
 
         if existing_record:
-            if self.hard_ready > 0: # Make sure the user is not unfollowing
+            if self.hard_ready > 0:  # Make sure the user is not unfollowing
                 self.hard_ready += 1
             existing_record.distance = -2
         db.session.commit()
@@ -178,7 +186,9 @@ class User(db.Model):
             return False
         user_id = self.id
 
-        user_items = db.session.query(UserCompany).filter(UserCompany.distance < 0).all()
+        user_items = (
+            db.session.query(UserCompany).filter(UserCompany.distance < 0).all()
+        )
 
         users = []
         items = []
@@ -195,23 +205,22 @@ class User(db.Model):
         sparse_data1 = sp.csr_matrix((feedback, (items, users)))
 
         model = AlternatingLeastSquares()
-        model = load('data/rec_model.npz')
+        model = load("data/rec_model.npz")
 
         model.partial_fit_users([user_id], sparse_data[[user_id]])
 
         model.partial_fit_items(items, sparse_data1[items])
 
-        dump(model, 'data/rec_model.npz')
+        dump(model, "data/rec_model.npz")
 
         self.hard_ready = 0
         db.session.commit()
         return True
-    
+
     def hard_recommend(self, k: int) -> list[int]:
         """Return `k` user recommendations."""
-        
-        model = load('data/rec_model.npz')
-        
+
+        model = load("data/rec_model.npz")
 
         user_items = db.session.query(UserCompany).filter(UserCompany.distance < 0)
 
@@ -228,9 +237,10 @@ class User(db.Model):
 
         sparse_data = sp.csr_matrix((feedback, (users, items)))
 
-        recommendations, scores = model.recommend(self.id, sparse_data[[self.id]], N=k, filter_already_liked_items=True)
+        recommendations, scores = model.recommend(
+            self.id, sparse_data[[self.id]], N=k, filter_already_liked_items=True
+        )
         return recommendations
-
 
     def to_dict(self) -> dict:
         """Return object information to send to front-end."""
@@ -264,7 +274,7 @@ class Notification(db.Model):
             "id": self.id,
             "targetId": self.target_id,
             "targetType": self.target_type,
-            "message": self.message
+            "message": self.message,
         }
 
     def get_users(self) -> list[User]:
@@ -285,25 +295,21 @@ class Notification(db.Model):
 
     @staticmethod
     def get_by_id(notification_id: int) -> Notification | None:
-        return db.session.query(Notification).filter(Notification.id == notification_id).one_or_none()
+        return (
+            db.session.query(Notification)
+            .filter(Notification.id == notification_id)
+            .one_or_none()
+        )
 
     @staticmethod
     def create_company_notification(company_id: int, message: str):
         """Create Notification objects about a company. DOES NOT insert into database."""
-        return Notification(
-            target_type=1,
-            target_id=company_id,
-            message=message
-        )
+        return Notification(target_type=1, target_id=company_id, message=message)
 
     @staticmethod
     def create_article_notification(article_id: int, message: str):
         """Create Notification objects about an article. DOES NOT insert into database."""
-        return Notification(
-            target_type=2,
-            target_id=article_id,
-            message=message
-        )
+        return Notification(target_type=2, target_id=article_id, message=message)
 
     @staticmethod
     def add_to_database(notification: Notification):
@@ -316,7 +322,9 @@ class UserNotification(db.Model):
     __tablename__ = "UserNotification"
 
     user_id = db.Column(db.Integer, db.ForeignKey("User.id"), primary_key=True)
-    notification_id = db.Column(db.Integer, db.ForeignKey("Notification.id"), primary_key=True)
+    notification_id = db.Column(
+        db.Integer, db.ForeignKey("Notification.id"), primary_key=True
+    )
     received = db.Column(db.DateTime)
     read = db.Column(db.Boolean, default=False)
 
@@ -331,13 +339,19 @@ class UserNotification(db.Model):
         return {
             **self.notification.to_dict(),
             "read": self.read,
-            "received": self.received
+            "received": self.received,
         }
 
     @staticmethod
     def get(notification_id: int, user_id: int) -> UserNotification | None:
-        return db.session.query(UserNotification).filter(UserNotification.notification_id == notification_id,
-                                                         UserNotification.user_id == user_id).one_or_none()
+        return (
+            db.session.query(UserNotification)
+            .filter(
+                UserNotification.notification_id == notification_id,
+                UserNotification.user_id == user_id,
+            )
+            .one_or_none()
+        )
 
 
 class Sector(db.Model):
@@ -443,9 +457,12 @@ class Company(db.Model):
 
         # TODO method to add all sectors to it
 
-    def update_sentiment(self, sentiment: float) -> None:
+    def update_sentiment(self) -> None:
         """Update the sentiment of this company."""
-        self.sentiment = sentiment
+        articles = self.get_articles()
+        if len(articles) == 0:
+            return 0
+        self.sentiment = sum(map(lambda a: a.sentiment, articles)) / len(articles)
         db.session.commit()
 
     def to_dict(self) -> dict:
@@ -601,16 +618,12 @@ class Stock(db.Model):
     @staticmethod
     def get_by_company(company_id: int) -> Stock | None:
         """Get stock data for the given company."""
-        return (
-            db.session.query(Stock).filter(Stock.company_id == company_id).first()
-        )
+        return db.session.query(Stock).filter(Stock.company_id == company_id).first()
+
     @staticmethod
     def get_all_by_company(company_id: int) -> list[Stock] | None:
         """Get stock data for the given company."""
-        return (
-            db.session.query(Stock).filter(Stock.company_id == company_id).all()
-        )
-
+        return db.session.query(Stock).filter(Stock.company_id == company_id).all()
 
 
 class UserCompany(db.Model):
@@ -708,8 +721,12 @@ class Article(db.Model):
             "summary": self.summary,
             "sentimentCategory": sentiment_score_to_text(self.sentiment),
             "sentimentScore": self.sentiment,
-            "relatedCompanies": list(map(lambda c: {'id': c.id, 'name': c.name},
-                                         map(lambda ac: ac.company, self.related_companies)))
+            "relatedCompanies": list(
+                map(
+                    lambda c: {"id": c.id, "name": c.name},
+                    map(lambda ac: ac.company, self.related_companies),
+                )
+            ),
         }
 
     def __repr__(self) -> str:
