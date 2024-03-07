@@ -58,7 +58,7 @@ module.exports = function(_env, argv) {
       new HtmlWebpackPlugin({
         template: path.resolve(__dirname, "public/index.html"),
         inject: true,
-        favicon: "public/assets/favicon.ico"
+        favicon: "public/assets/I2I.ico"
       })
     ],
     optimization: {

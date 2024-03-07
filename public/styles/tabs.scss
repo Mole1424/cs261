@@ -4,32 +4,36 @@
   display: flex;
   flex-direction: row;
 
-  > .tab {
+  .tab {
+    font-weight: bold;
+    text-transform: uppercase;
     color: V.$tab-fg;
-    border: 1px solid V.$tab-fg;
+    border: 0;
     background-color: V.$tab-bg;
-
     flex: 1;
+    transition: background-color 0.3s, color 0.3s;
 
-    // Centre the text in this tab
+  
+    font-size: 14px;
+
+    border-radius: 5px 5px 5px 5px;
+    padding: 10px 20px;
+    margin-right: 1px; // Overlapping borders
+
+    // Center the text in this tab
     display: flex;
     justify-content: center;
     align-items: center;
 
     &[data-selected='true'] {
       color: V.$tab-selected-fg;
-      border-color: V.$tab-selected-fg;
       background-color: V.$tab-selected-bg;
     }
 
-    &:hover {
-      cursor: default;
-
-      &[data-clickable='true'] {
-        color: V.$tab-hover-fg;
-        border-color: V.$tab-hover-fg;
-        background-color: V.$tab-hover-bg;
-      }
+    &[data-clickable='true']:hover {
+      cursor: pointer;
+      color: V.$tab-hover-fg;
+      background-color: V.$tab-hover-bg;
     }
   }
 }

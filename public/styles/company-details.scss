@@ -1,4 +1,100 @@
+@use "variables" as V;
+
 .company-details {
-  // TODO
+  padding: 20px;
+  background-color: V.$secondary-bg;
+  border: 1px solid V.$primary-fg;
+  border-radius: 8px;
+
   display: grid;
+  grid-template-areas:
+    "logo name url follow"
+    "logo sectors sectors sectors";
+  grid-template-columns: 10% 40% 20% 20%;
+
+  grid-gap: 5px;
+  
+  .company-logo {
+    grid-area: logo;
+    width: auto;
+    max-width: auto;
+    margin: auto;
+  }
+
+  .company-name {
+    grid-area: name;
+    font-size: 1.5em;
+    border-bottom: 1px solid V.$primary-fg;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 10px 0;
+  }
+
+  .company-stock {
+    grid-area: sectors;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin: 10px 0;
+
+    img {
+      margin-right: 5px;
+      width: 16px;
+      height: 16px;
+    }
+
+    .style-red {
+      color:  #f11;
+    }
+
+    .style-green {
+      color:  #4f5;
+    }
+  }
+
+  .company-follow {
+    grid-area: follow;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 85%;
+    border-radius: 4px;
+    padding: 8px;
+    cursor: pointer;
+    background-color: V.$primary-fg;
+    color: #000000;
+    font-size: 14px;
+
+    &.btn-danger {
+      background-color: #911;
+      border-color:  #111;
+    }
+  }
+  .company-sectors {
+    grid-area: sectors;
+    display: flex;
+    flex-wrap: wrap;  // Allow sectors to wrap to the next line if there's not enough space
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px;
+    margin-top: 10px;
+  
+    span {
+      padding: 8px;  // Adjust padding for each sector
+      margin-right: 10px;  // Add some space between sectors
+  
+      &:not(:last-child) {
+        margin-bottom: 10px;  // Add some space below each sector
+      }
+  
+      &:not(:last-child)::after {
+        content: ' ';
+        white-space: nowrap;
+      }
+    }
+  }
+  
 }

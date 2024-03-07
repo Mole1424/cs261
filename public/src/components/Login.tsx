@@ -71,7 +71,7 @@ export const Login = ({ onLoginSuccess }: IProps) => {
           : <button onClick={onClickLogin}>Log In</button>
         }
 
-        {!isSigningUp && <p>Not got an account? <span className={'link'} onClick={() => {
+        {!isSigningUp && <p>Don't have an account? <span className={'link'} onClick={() => {
           setErrorMessage(null);
           setIsSigningUp(true);
         }}>Sign up</span></p>}
