@@ -12,8 +12,8 @@ from flask import Flask
 FloatRange = tuple[float, float]
 
 
-def string_to_list(string: str, convert_fn: Callable[[str], any]) -> list:
-    """Attempt to convert the input string to a list. String is in the form [x, y, z, ...]. `convert_fn`
+def string_to_list(string: str, convert_fn: Callable[[str], any], seperator: str = ",") -> list:
+    """Attempt to convert the input string to a list. String is in the form 'x<separator>y<separator>z...]. `convert_fn`
     is called on each element."""
 
     def func(x: str):
@@ -22,7 +22,7 @@ def string_to_list(string: str, convert_fn: Callable[[str], any]) -> list:
         except:
             return None
 
-    return list(filter(lambda x: x is not None, map(func, string[1:-1].split(","))))
+    return list(filter(lambda x: x is not None, map(func, string.split(seperator))))
 
 
 def get_user_by_id(user_id: int) -> db.User | None:
@@ -116,8 +116,9 @@ def get_company_details(
             details["stock"] = stocks[0].to_dict()
         else:
             details["stockDelta"] = stocks[0].stock_change
+
     if load_stock:
-        details["all_stocks"] = [
+        details["allStocks"] = [
             (stock.to_dict(), stock.stock_change) for stock in stocks
         ]
 

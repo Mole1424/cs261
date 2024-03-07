@@ -441,8 +441,8 @@ def create_endpoints(app: Flask) -> None:
             return
 
         load_stock = get_form_or_default("loadStock", "false") == "true"
-        company, company_details = interface.get_company_details_by_id(company_id, user.id, load_stock)
-        if not company:
+        response = interface.get_company_details_by_id(company_id, user.id, load_stock)
+        if response is None:
             return jsonify({
                 "error": True,
                 "message": f"Cannot find company with id #{company_id}"
@@ -450,7 +450,7 @@ def create_endpoints(app: Flask) -> None:
 
         return jsonify({
             "error": False,
-            "data": company_details
+            "data": response[1]
         })
 
     @app.route('/company/popular', methods=("POST",))

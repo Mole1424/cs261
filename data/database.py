@@ -592,10 +592,10 @@ class Stock(db.Model):
             "marketCap": self.market_cap,
             "stockPrice": self.stock_price,
             "stockChange": self.stock_change,
-            "stockDay": string_to_list(self.stock_day, float),
-            "stockWeek": string_to_list(self.stock_week, float),
-            "stockMonth": string_to_list(self.stock_month, float),
-            "stockYear": string_to_list(self.stock_year, float),
+            "stockDay": string_to_list(self.stock_day, float, " "),
+            "stockWeek": string_to_list(self.stock_week, float, " "),
+            "stockMonth": string_to_list(self.stock_month, float, " "),
+            "stockYear": string_to_list(self.stock_year, float, " "),
         }
 
     @staticmethod
