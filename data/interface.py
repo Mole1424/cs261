@@ -61,7 +61,7 @@ def is_valid_user(email: str, password: str) -> bool:
 
 
 def get_company_details_by_id(
-    company_id: int, user_id: int = None, load_stock=False
+    company_id: int, user_id: int = None, load_stock=False, load_articles=False
 ) -> tuple[db.Company, dict] | None:
     """Return (company, company_details). Get full stock details?"""
     if (
@@ -69,13 +69,13 @@ def get_company_details_by_id(
         .where(db.Company.id == company_id)
         .one_or_none()
     ):
-        return company, get_company_details(company, user_id, load_stock)
+        return company, get_company_details(company, user_id, load_stock, load_articles)
     else:
         return None
 
 
 def get_company_details_by_symbol(
-    symbol: str, user_id: int = None, load_stock=False, repeat=True
+    symbol: str, user_id: int = None, load_stock=False, repeat=True, load_articles=False
 ) -> tuple[db.Company, dict] | None:
     """Return (company, company_details). Get full stock details?"""
     if (
@@ -84,16 +84,18 @@ def get_company_details_by_symbol(
         .one_or_none()
     ):
         company = db.db.session.query(db.Company).filter_by(id=stock.company_id).first()
-        return company, get_company_details(company, user_id, load_stock)
+        return company, get_company_details(company, user_id, load_stock, load_articles)
     elif repeat:
         add_company(symbol)
-        return get_company_details_by_symbol(symbol, user_id, load_stock, False)
+        return get_company_details_by_symbol(
+            symbol, user_id, load_stock, False, load_articles
+        )
     else:
         return None
 
 
 def get_company_details(
-    company: db.Company, user_id: int = None, load_stock=False
+    company: db.Company, user_id: int = None, load_stock=False, load_articles=False
 ) -> dict:
     """Get company details, given the company object."""
 
@@ -103,12 +105,6 @@ def get_company_details(
             map(
                 lambda x: x.sector.to_dict(),
                 db.CompanySector.get_by_company(company.id),
-            )
-        ),
-        "articles": list(
-            map(
-                lambda x: x.to_dict(),
-                get_company_articles(company.id),
             )
         ),
     }
@@ -121,9 +117,9 @@ def get_company_details(
         else:
             details["stockDelta"] = stocks[0].stock_change
     if load_stock:
-        details["all_stocks"] = [(stock.to_dict(), stock.stock_change) for stock in stocks]
-        
-
+        details["all_stocks"] = [
+            (stock.to_dict(), stock.stock_change) for stock in stocks
+        ]
 
     # If user was provided, check if they are following the company
     if user_id is not None:
@@ -131,6 +127,9 @@ def get_company_details(
         details["isFollowing"] = (
             False if user_company is None else user_company.is_following()
         )
+
+    if load_articles:
+        details["articles"] = get_company_articles(company.id)
 
     return details
 
@@ -220,10 +219,18 @@ def search_companies(
     # If less than 10 results from inside db, call api
     api_call_symbols = run(api.search_companies(name))
     for symbol in api_call_symbols:
-        company = db.db.session.query(db.Company.id).filter(db.Company.name == symbol[0]).first()
+        company = (
+            db.db.session.query(db.Company.id)
+            .filter(db.Company.name == symbol[0])
+            .first()
+        )
         if not company:
             result.append(add_company(symbol[1]))
-        elif not db.db.session.query(db.Stock).filter(db.Stock.symbol == symbol[1]).first():
+        elif (
+            not db.db.session.query(db.Stock)
+            .filter(db.Stock.symbol == symbol[1])
+            .first()
+        ):
             add_stock(symbol[1], company[0])
     return result
 
@@ -308,8 +315,7 @@ def update_company_info(company_id: int) -> None:
 
     company_symbols = company.get_stocks()  # get all stocks for company
     combined_cap = 0  # combined market cap of all stocks
-    company_name = company.name.split("-")[0].strip()
-    new_symbols = run(api.get_symbols(company_name))
+    new_symbols = run(api.get_symbols(company.name))
 
     for symbol in company_symbols:
         if symbol.symbol not in new_symbols:
@@ -363,9 +369,13 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
     if not (
         company.last_scraped is None or (datetime.now() - company.last_scraped).days > 1
     ):
-        return company.get_articles()
+        articles = company.get_articles()
+        if len(articles) > 0:
+            return articles
 
-    news = run(api.get_news(company.name.split("-")[0].strip()))  # get new newa
+    print("Getting new articles")
+    news = run(api.get_news(company.name))  # get new news
+    print(news)
     news_in_db = company.get_articles()
     for i in range(len(news)):
         if i >= len(news_in_db):
@@ -387,6 +397,7 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
                 if value != "":
                     setattr(news_in_db[i], key, value)
     db.db.session.commit()
+    print("Done (news)")
     return news
 
 
@@ -439,4 +450,5 @@ def update_loop(app: Flask) -> None:
             for company in companies:
                 update_company_info(company.id)
                 # sleep for a day / number of companies
-                sleep(86400 / max(len(companies), 1))
+                for _ in range(86400 // max(len(companies), 1)):
+                    sleep(1)
