@@ -140,7 +140,7 @@ async def get_news(name: str) -> list[dict]:
         async with ClientSession(
             headers={"x-api-key": getenv("NEWSCATCHER_API_KEY")}
         ) as session:
-            url = f'https://api.newscatcherapi.com/v2/search?q="{name}"&lang=en&sources={whitelist}&sort_by=date&page_size=50'
+            url = f"https://api.newscatcherapi.com/v2/search?q={name}&lang=en&sources={whitelist}&sort_by=date&page_size=50"
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
@@ -181,7 +181,7 @@ async def get_news(name: str) -> list[dict]:
     return articles
 
 
-async def search_companies(query: str) -> list[tuple[str,str]]:
+async def search_companies(query: str) -> list[tuple[str, str]]:
     """Search for companies given a query."""
     async with ClientSession() as session:
         async with session.get(
@@ -196,7 +196,7 @@ async def search_companies(query: str) -> list[tuple[str,str]]:
                     try:
                         longname = result["longname"]
                         if longname != "":
-                            result_list.append((result["longname"],result["symbol"]))
+                            result_list.append((result["longname"], result["symbol"]))
                     except Exception as e:
                         pass
                 return result_list
