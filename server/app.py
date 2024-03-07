@@ -2,10 +2,14 @@ from os import getenv, path, getcwd
 from flask import Flask, render_template
 import mimetypes
 
-from data.database import db
+from data.database import db, User, UserCompany
 from server import constants
 from server.mail import mail
 from server.routes import create_endpoints
+
+from implicit.als import AlternatingLeastSquares
+from joblib import dump
+import scipy.sparse as sp
 
 
 def create_app() -> Flask:
@@ -29,6 +33,9 @@ def create_app() -> Flask:
     # Attach the email service
     mail.app = app
     mail.init_app(app)
+    init_train_hard()
+
+    
 
     # Setup file MIME types correctly -
     #  I noticed that Flask occasionally struggles with associating the correct mimetype
@@ -47,3 +54,27 @@ def create_app() -> Flask:
     create_endpoints(app)
 
     return app
+
+def init_train_hard():
+    user_items = (
+        db.session.query(UserCompany)
+        .join(User, User.id == UserCompany.user_id)
+        .filter(User.hard_ready >= 0, UserCompany.distance < 0)
+    )
+
+    users = []
+    items = []
+    feedback = []
+    for entry in user_items:
+        users.append(entry.user_id)
+        items.append(entry.company_id)
+        if entry.distance == -1:
+            feedback.append(1)
+        else:
+            feedback.append(-1)
+
+    sparse_data = sp.csr_matrix((feedback, (users, items)))
+
+    model = AlternatingLeastSquares(factors=10, regularization=0.1, iterations=50)
+    model.fit(sparse_data)
+    dump(model, "data/rec_model.npz")

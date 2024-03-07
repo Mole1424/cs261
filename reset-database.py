@@ -3,9 +3,6 @@ from os import getenv, getcwd, path
 from dotenv import load_dotenv
 import pandas as pd
 from flask import Flask
-import scipy.sparse as sp
-from implicit.als import AlternatingLeastSquares
-from joblib import dump
 from time import sleep
 
 from data.database import db, User, UserCompany
@@ -59,32 +56,6 @@ def reset_database():
         other_user.add_company(company)
     db.session.commit()
 
-
-def init_train_hard():
-    user_items = (
-        db.session.query(UserCompany)
-        .join(User, User.id == UserCompany.user_id)
-        .filter(User.hard_ready >= 0, UserCompany.distance < 0)
-    )
-
-    users = []
-    items = []
-    feedback = []
-    for entry in user_items:
-        users.append(entry.user_id)
-        items.append(entry.company_id)
-        if entry.distance == -1:
-            feedback.append(1)
-        else:
-            feedback.append(-1)
-
-    sparse_data = sp.csr_matrix((feedback, (users, items)))
-
-    model = AlternatingLeastSquares(factors=10, regularization=0.1, iterations=50)
-    model.fit(sparse_data)
-    dump(model, "data/rec_model.npz")
-
-
 if __name__ == "__main__":
     app = Flask(constants.APP_NAME)
     app.secret_key = getenv("FLASK_SECRET")
@@ -100,4 +71,4 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         reset_database()
-        init_train_hard()
+        
