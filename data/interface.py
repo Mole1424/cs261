@@ -114,12 +114,16 @@ def get_company_details(
     }
 
     # Provide full stock data?
-    stock = db.Stock.get_by_company(company.id)
-    if stock is not None:
+    stocks = db.Stock.get_by_company(company.id)
+    if len(stocks) > 0:
         if load_stock:
-            details["stock"] = stock.to_dict()
+            details["stock"] = stocks[0].to_dict()
         else:
-            details["stockDelta"] = stock.stock_change
+            details["stockDelta"] = stocks[0].stock_change
+    if load_stock:
+        details["all_stocks"] = [(stock.to_dict(), stock.stock_change) for stock in stocks]
+        
+
 
     # If user was provided, check if they are following the company
     if user_id is not None:
@@ -211,12 +215,18 @@ def search_companies(
         )
     result = query.all()
 
+    if len(result) > 10 or name is None:
+        return result
     # If less than 10 results from inside db, call api
-    if len(result) < 10 and name is not None and len(name) > 0:
-        api_call = run(api.search_companies(name))
-        companies = [add_company(ticker) for ticker in api_call]
-        result = result + companies
-
+    api_call_symbols = run(api.search_companies(name))
+    for symbol in api_call_symbols:
+        company = db.db.session.query(db.Company.id).filter(db.Company.name == symbol[0]).first()
+        if not company:
+            result.append(add_company(symbol[1]))
+            print("new company added called: " + symbol[0])
+        elif not db.db.session.query(db.Stock).filter(db.Stock.symbol == symbol[1]).first():
+            print("added a stock with ticker: " + symbol[1])
+            add_stock(symbol[1], company[0])
     return result
 
 
@@ -234,7 +244,7 @@ def add_company(symbol: str) -> db.Company | None:
 
     info = run(api.get_company_info(symbol))
     company = db.Company(
-        name=info["name"] + ' - (' + symbol + ")",
+        name=info["name"],
         url=info["url"],
         description=info["description"],
         location=info["location"],

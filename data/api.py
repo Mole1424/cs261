@@ -181,7 +181,7 @@ async def get_news(name: str) -> list[dict]:
     return articles
 
 
-async def search_companies(query: str) -> list[str]:
+async def search_companies(query: str) -> list[tuple[str,str]]:
     """Search for companies given a query."""
     async with ClientSession() as session:
         async with session.get(
@@ -189,15 +189,15 @@ async def search_companies(query: str) -> list[str]:
         ) as response:
             if response.status == 200:
                 data = await response.json()
-                # return the first 5 results
+                # return the first 10 results
                 
                 result_list = []
-                for result in data["quotes"][:10]:
+                for result in data["quotes"][:20]:
                     try:
                         longname = result["longname"]
                         if longname != "":
-                            result_list.append(result["symbol"])
-                    except KeyError:
+                            result_list.append((result["longname"],result["symbol"]))
+                    except Exception as e:
                         pass
                 return result_list
             else:

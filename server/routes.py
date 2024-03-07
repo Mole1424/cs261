@@ -4,7 +4,7 @@ from flask import Flask, request, session, abort, jsonify
 from collections import Counter
 
 from server import constants
-from data.database import db, User, Sector, Company, UserCompany, Article, UserNotification, Notification
+from data.database import db, User, Sector, Company, UserCompany, Article, UserNotification, Notification, Stock
 import data.interface as interface
 from data.database import db, User, Sector
 
@@ -442,7 +442,6 @@ def create_endpoints(app: Flask) -> None:
 
         load_stock = get_form_or_default("loadStock", "false") == "true"
         company, company_details = interface.get_company_details_by_id(company_id, user.id, load_stock)
-
         if not company:
             return jsonify({
                 "error": True,
@@ -458,7 +457,7 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def get_popular_companies(user: User):
         """Return top `count` popular companies."""
-
+        print(str(db.session.query(Stock.company_id).all()))
         try:
             max_count = int(request.form['count'])
         except (ValueError, KeyError):

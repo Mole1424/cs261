@@ -599,10 +599,10 @@ class Stock(db.Model):
         }
 
     @staticmethod
-    def get_by_company(company_id: int) -> Stock | None:
+    def get_by_company(company_id: int) -> list[Stock] | None:
         """Get stock data for the given company."""
         return (
-            db.session.query(Stock).filter(Stock.company_id == company_id).one_or_none()
+            db.session.query(Stock).filter(Stock.company_id == company_id).all()
         )
 
 
