@@ -4,9 +4,9 @@ from flask import Flask, request, session, abort, jsonify
 from collections import Counter
 
 from server import constants
-from data.database import db, User, Sector, Company, UserCompany, Article, UserNotification, Notification, Stock
+from data.database import db, User, Sector, Company, UserCompany, Article, UserNotification, Notification
 import data.interface as interface
-from data.database import db, User, Sector
+import threading
 
 USER_ID = "user_id"
 
@@ -44,7 +44,7 @@ def get_form_or_default(property_name: str, default: any, action: Callable[[str]
     else:
         return default
 
-
+lock = threading.Lock()
 def create_endpoints(app: Flask) -> None:
     """Register endpoints to the given application."""
 
@@ -477,62 +477,62 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def company_search(user: User):
         """Search companies."""
-        
-        # ceo?: string
-        ceo: str | None = get_form_or_default('ceo', None)
+        with lock:
+            # ceo?: string
+            ceo: str | None = get_form_or_default('ceo', None)
 
-        # companyName?: string
-        company_name: str | None = get_form_or_default('name', None)
+            # companyName?: string
+            company_name: str | None = get_form_or_default('name', None)
 
-        # sectors: int[]. List of sector IDs.
-        sectors: list[int] | None = request.form.getlist('sectors[]')
-        if sectors is not None:
-            try:
-                sectors = list(map(int, sectors))
-            except ValueError:
-                sectors = None
-
-        # sentimentRange: [float, float]. [lower, upper) range.
-        sentiment_range: list[float] | None = request.form.getlist('sentimentRange[]')
-        if sentiment_range is not None:
-            if len(sentiment_range) == 2:
+            # sectors: int[]. List of sector IDs.
+            sectors: list[int] | None = request.form.getlist('sectors[]')
+            if sectors is not None:
                 try:
-                    sentiment_range = list(map(float, sentiment_range))
+                    sectors = list(map(int, sectors))
                 except ValueError:
+                    sectors = None
+
+            # sentimentRange: [float, float]. [lower, upper) range.
+            sentiment_range: list[float] | None = request.form.getlist('sentimentRange[]')
+            if sentiment_range is not None:
+                if len(sentiment_range) == 2:
+                    try:
+                        sentiment_range = list(map(float, sentiment_range))
+                    except ValueError:
+                        sentiment_range = None
+                else:
                     sentiment_range = None
-            else:
-                sentiment_range = None
 
-        # marketCapRange: [float, float]. [lower, upper) range.
-        market_cap_range: list[float] | None = request.form.getlist('marketCapRange[]')
-        if market_cap_range is not None:
-            if len(market_cap_range) == 2:
-                try:
-                    market_cap_range = list(map(float, market_cap_range))
-                except ValueError:
+            # marketCapRange: [float, float]. [lower, upper) range.
+            market_cap_range: list[float] | None = request.form.getlist('marketCapRange[]')
+            if market_cap_range is not None:
+                if len(market_cap_range) == 2:
+                    try:
+                        market_cap_range = list(map(float, market_cap_range))
+                    except ValueError:
+                        market_cap_range = None
+                else:
                     market_cap_range = None
-            else:
-                market_cap_range = None
 
-        # stockPriceRange: [float, float]. [lower, upper) range.
-        stock_price_range: list[float] | None = request.form.getlist('stockPriceRange[]')
-        if stock_price_range is not None:
-            if len(stock_price_range) == 2:
-                try:
-                    stock_price_range = list(map(float, stock_price_range))
-                except ValueError:
+            # stockPriceRange: [float, float]. [lower, upper) range.
+            stock_price_range: list[float] | None = request.form.getlist('stockPriceRange[]')
+            if stock_price_range is not None:
+                if len(stock_price_range) == 2:
+                    try:
+                        stock_price_range = list(map(float, stock_price_range))
+                    except ValueError:
+                        stock_price_range = None
+                else:
                     stock_price_range = None
-            else:
-                stock_price_range = None
 
-        companies = interface.search_companies(
-            ceo=ceo,
-            name=company_name,
-            sectors=sectors,
-            sentiment=sentiment_range,
-            market_cap=market_cap_range,
-            stock_price=stock_price_range,
-            user_id=user.id
-        )
+            companies = interface.search_companies(
+                ceo=ceo,
+                name=company_name,
+                sectors=sectors,
+                sentiment=sentiment_range,
+                market_cap=market_cap_range,
+                stock_price=stock_price_range,
+                user_id=user.id
+            )
 
-        return jsonify(list(map(lambda c: interface.get_company_details(c, user.id), companies)))
+            return jsonify(list(map(lambda c: interface.get_company_details(c, user.id), companies)))
