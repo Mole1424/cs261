@@ -16,8 +16,11 @@ if __name__ == "__main__":
 
     # Start the update loop DONT UNCOMMENT THIS AS ITS UNTESTED
     # update_thread = Thread(target=update_loop, args=(app,))
+    # update_thread.daemon = True
     # update_thread.start()
 
     app.run(
-        host=constants.FLASK_HOST, port=constants.FLASK_PORT, debug="--debug" in options
+        host=constants.FLASK_HOST,
+        port=constants.FLASK_PORT,
+        debug="--debug" in options,
     )

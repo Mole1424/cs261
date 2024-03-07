@@ -6,6 +6,7 @@ from flask import Flask
 import scipy.sparse as sp
 from implicit.als import AlternatingLeastSquares
 from joblib import dump
+from time import sleep
 
 from data.database import db, User, UserCompany
 from data.interface import add_company, get_company_details_by_symbol
@@ -43,6 +44,7 @@ def reset_database():
     for symbol in symbols:
         print("adding", symbol)
         add_company(symbol)
+        sleep(1)
         print("% done", symbols.index(symbol) / len(symbols) * 100)
 
     print("following companies")

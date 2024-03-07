@@ -2,7 +2,7 @@ import yfinance as yf
 
 from aiohttp import ClientSession
 from newspaper import Article
-from datetime import datetime
+from datetime import datetime, timedelta
 from os import getenv
 
 
@@ -140,7 +140,8 @@ async def get_news(name: str) -> list[dict]:
         async with ClientSession(
             headers={"x-api-key": getenv("NEWSCATCHER_API_KEY")}
         ) as session:
-            url = f"https://api.newscatcherapi.com/v2/search?q={name}&lang=en&sources={whitelist}&sort_by=date&page_size=50"
+            time = (datetime.now() - timedelta(days=364)).strftime("%Y/%m/%d")
+            url = f"https://api.newscatcherapi.com/v2/search?q={name}&lang=en&sources={whitelist}&sort_by=date&page_size=50&from={time}"
             async with session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
