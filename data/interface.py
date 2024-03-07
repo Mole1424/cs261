@@ -110,7 +110,7 @@ def get_company_details(
     }
 
     # Provide full stock data?
-    stocks = db.Stock.get_by_company(company.id)
+    stocks = db.Stock.get_all_by_company(company.id)
     if len(stocks) > 0:
         if load_stock:
             details["stock"] = stocks[0].to_dict()
