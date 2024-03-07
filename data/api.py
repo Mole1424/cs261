@@ -189,11 +189,8 @@ async def search_companies(query: str) -> list[tuple[str,str]]:
         ) as response:
             if response.status == 200:
                 data = await response.json()
-<<<<<<< HEAD
                 # return the first 10 results
-                
-=======
->>>>>>> 567a33228e66ae5c4cbe6668001155d96ec14175
+
                 result_list = []
                 for result in data["quotes"][:20]:
                     try:

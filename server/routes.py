@@ -457,7 +457,6 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def get_popular_companies(user: User):
         """Return top `count` popular companies."""
-        print(str(db.session.query(Stock.company_id).all()))
         try:
             max_count = int(request.form['count'])
         except (ValueError, KeyError):

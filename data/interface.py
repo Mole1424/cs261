@@ -223,9 +223,7 @@ def search_companies(
         company = db.db.session.query(db.Company.id).filter(db.Company.name == symbol[0]).first()
         if not company:
             result.append(add_company(symbol[1]))
-            print("new company added called: " + symbol[0])
         elif not db.db.session.query(db.Stock).filter(db.Stock.symbol == symbol[1]).first():
-            print("added a stock with ticker: " + symbol[1])
             add_stock(symbol[1], company[0])
     return result
 
@@ -244,10 +242,7 @@ def add_company(symbol: str) -> db.Company | None:
 
     info = run(api.get_company_info(symbol))
     company = db.Company(
-<<<<<<< HEAD
         name=info["name"],
-=======
->>>>>>> 567a33228e66ae5c4cbe6668001155d96ec14175
         url=info["url"],
         description=info["description"],
         location=info["location"],
