@@ -33,9 +33,9 @@ def create_app() -> Flask:
     # Attach the email service
     mail.app = app
     mail.init_app(app)
-    init_train_hard()
 
-    
+    with app.app_context():
+        init_train_hard()
 
     # Setup file MIME types correctly -
     #  I noticed that Flask occasionally struggles with associating the correct mimetype
@@ -55,13 +55,13 @@ def create_app() -> Flask:
 
     return app
 
+
 def init_train_hard():
     user_items = (
         db.session.query(UserCompany)
         .join(User, User.id == UserCompany.user_id)
         .filter(User.hard_ready >= 0, UserCompany.distance < 0)
     )
-
     users = []
     items = []
     feedback = []

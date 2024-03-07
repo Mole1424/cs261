@@ -56,6 +56,7 @@ def reset_database():
         other_user.add_company(company)
     db.session.commit()
 
+
 if __name__ == "__main__":
     app = Flask(constants.APP_NAME)
     app.secret_key = getenv("FLASK_SECRET")

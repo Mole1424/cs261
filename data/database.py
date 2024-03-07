@@ -172,13 +172,13 @@ class User(db.Model):
             .order_by(UserCompany.distance.asc())
         )
         return recommendations[:k]
-    
+
     def hard_train(self) -> bool:
-        if self.hard_ready >= 0 and self.hard_ready <= 5:
+        if 0 <= self.hard_ready <= 5:
             return False
         user_id = self.id
 
-        user_items = db.session.query(UserCompany).filter(UserCompany.distance < 0)
+        user_items = db.session.query(UserCompany).filter(UserCompany.distance < 0).all()
 
         users = []
         items = []
