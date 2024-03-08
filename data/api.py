@@ -1,9 +1,9 @@
-import yfinance as yf
-
-from aiohttp import ClientSession
-from newspaper import Article
 from datetime import datetime, timedelta
 from os import getenv
+
+import yfinance as yf
+from aiohttp import ClientSession
+from newspaper import Article
 
 
 async def get_company_info(symbol: str) -> dict:

@@ -1,16 +1,16 @@
 from __future__ import annotations
-from flask_sqlalchemy import SQLAlchemy
-import werkzeug.security
+
 from datetime import datetime
-from analysis.analysis import sentiment_label, sentiment_score_to_text
-from sqlalchemy import and_, desc
-from data.api import get_article_content
-import pandas as pd
+
 import scipy.sparse as sp
+import werkzeug.security
+from flask_sqlalchemy import SQLAlchemy
 from implicit.als import AlternatingLeastSquares
-import numpy as np
-from joblib import load
-from joblib import dump
+from joblib import dump, load
+from sqlalchemy import and_, desc
+
+from analysis.analysis import sentiment_label, sentiment_score_to_text
+from data.api import get_article_content
 
 # Create database
 db = SQLAlchemy()

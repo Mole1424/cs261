@@ -1,14 +1,14 @@
-from os import getenv, getcwd, path
-
-from dotenv import load_dotenv
-import pandas as pd
-from flask import Flask
+from datetime import datetime
+from os import getcwd, getenv, path
 from time import sleep
 
-from data.database import db, User, UserCompany
+import pandas as pd
+from dotenv import load_dotenv
+from flask import Flask
+
+from data.database import User, UserCompany, db
 from data.interface import add_company, get_company_details_by_symbol
 from server import constants
-from datetime import datetime
 
 
 def reset_database():

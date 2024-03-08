@@ -1,21 +1,17 @@
-import numpy as np
-from typing import Dict, Any
-from typing import List
-
-# Sentiment Analysis Modules
-from nltk import download as nltk_download
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from nltk import tokenize
-
 # Content Recommendation Modules
 import numpy as np
 import pandas as pd
-from implicit.als import AlternatingLeastSquares
-from sklearn.model_selection import train_test_split
 import scipy.sparse as sp
+from implicit.als import AlternatingLeastSquares
 
-nltk_download('vader_lexicon')
-nltk_download('punkt')
+# Sentiment Analysis Modules
+from nltk import download as nltk_download
+from nltk import tokenize
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from sklearn.model_selection import train_test_split
+
+nltk_download("vader_lexicon")
+nltk_download("punkt")
 
 
 def sentiment_label(text: str) -> dict:
@@ -49,10 +45,12 @@ def sentiment_score_to_text(score: float) -> str:
 
 # TODO
 def recommend_hard_train(feedback):
-    data = {'user_id': feedback[0], 'stock_id': feedback[1], 'following': feedback[2]}
+    data = {"user_id": feedback[0], "stock_id": feedback[1], "following": feedback[2]}
     df = pd.DataFrame(data)
 
-    sparse_data = sp.csr_matrix((df['following'].astype(float), (df['user_id'], df['stock_id'])))
+    sparse_data = sp.csr_matrix(
+        (df["following"].astype(float), (df["user_id"], df["stock_id"]))
+    )
 
     # train_data, test_data = train_test_split(sparse_data, test_size=0.2, random_state=15)
 
@@ -60,18 +58,21 @@ def recommend_hard_train(feedback):
     model.fit(sparse_data)
     model.save("hard_model.pkl")
 
+
 # Recommend items for a specific user
 def recommend_hard(model, userids, feedback, k):
-    data = {'UserID': feedback[0], 'StockID': feedback[1], 'following': feedback[2]}
+    data = {"UserID": feedback[0], "StockID": feedback[1], "following": feedback[2]}
     df = pd.DataFrame(data)
 
-    sparse_data = sp.csr_matrix((df['following'].astype(float), (df['UserID'], df['StockID'])))
+    sparse_data = sp.csr_matrix(
+        (df["following"].astype(float), (df["UserID"], df["StockID"]))
+    )
     print(sparse_data)
 
     items, scores = model.recommend(userids, sparse_data[userids])
 
     return items[:k]
-            
+
 
 # example usage
 # Say user 1 follows stocks 1,2,5

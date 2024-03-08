@@ -1,15 +1,15 @@
-from os import getenv, path, getcwd
-from flask import Flask, render_template
 import mimetypes
+from os import getcwd, getenv, path
 
-from data.database import db, User, UserCompany
+import scipy.sparse as sp
+from flask import Flask, render_template
+from implicit.als import AlternatingLeastSquares
+from joblib import dump
+
+from data.database import User, UserCompany, db
 from server import constants
 from server.mail import mail
 from server.routes import create_endpoints
-
-from implicit.als import AlternatingLeastSquares
-from joblib import dump
-import scipy.sparse as sp
 
 
 def create_app() -> Flask:

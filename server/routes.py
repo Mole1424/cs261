@@ -1,19 +1,24 @@
+import threading
+from collections import Counter
 from functools import wraps
 from typing import Callable
-from flask import Flask, request, session, abort, jsonify
-from collections import Counter
 
-from server import constants
-from data.database import db, User, Sector, Company, UserCompany, Article, UserNotification, Notification
+from flask import Flask, abort, jsonify, request, session
+
 import data.interface as interface
-import threading
+from data.database import Sector, User, UserCompany, UserNotification, db
+from server import constants
 
 USER_ID = "user_id"
 
 
 def is_logged_in() -> bool:
     """Check if the current user is logged in."""
-    return USER_ID in session and session[USER_ID] is not None if constants.USER_DEFAULT is None else True
+    return (
+        USER_ID in session and session[USER_ID] is not None
+        if constants.USER_DEFAULT is None
+        else True
+    )
 
 
 def get_user() -> User | None:
@@ -38,13 +43,18 @@ def ensure_auth(func: Callable[[User], None]):
     return action
 
 
-def get_form_or_default(property_name: str, default: any, action: Callable[[str], any] = None) -> any:
+def get_form_or_default(
+    property_name: str, default: any, action: Callable[[str], any] = None
+) -> any:
     if value := request.form.get(property_name):
         return action(value) if action else value
     else:
         return default
 
+
 lock = threading.Lock()
+
+
 def create_endpoints(app: Flask) -> None:
     """Register endpoints to the given application."""
 
@@ -77,7 +87,10 @@ def create_endpoints(app: Flask) -> None:
         """Return list of sectors in the database."""
         return jsonify(
             list(
-                map(Sector.to_dict, sorted(interface.get_all_sectors(), key=lambda s: s.name))
+                map(
+                    Sector.to_dict,
+                    sorted(interface.get_all_sectors(), key=lambda s: s.name),
+                )
             )
         )
 
@@ -227,27 +240,29 @@ def create_endpoints(app: Flask) -> None:
 
         return jsonify({"error": False, "user": user.to_dict()})
 
-    @app.route('/user/notification-stats', methods=("GET",))
+    @app.route("/user/notification-stats", methods=("GET",))
     @ensure_auth
     def user_notification_stats(user: User):
         """Get notification statistics."""
-        return jsonify({
-            "total": len(user.notifications),
-            "unread": len(list(filter(lambda un: not un.read, user.notifications)))
-        })
-    
-    @app.route('/user/notifications', methods=("GET",))
+        return jsonify(
+            {
+                "total": len(user.notifications),
+                "unread": len(list(filter(lambda un: not un.read, user.notifications))),
+            }
+        )
+
+    @app.route("/user/notifications", methods=("GET",))
     @ensure_auth
     def user_get_notifications(user: User):
         """Get all notifications linked to this user."""
         return jsonify(list(map(UserNotification.to_dict, user.notifications)))
 
-    @app.route('/notification/get', methods=("POST",))
+    @app.route("/notification/get", methods=("POST",))
     @ensure_auth
     def notification_get(user: User):
         """Get notification `id`."""
         try:
-            notification_id = int(request.form['id'])
+            notification_id = int(request.form["id"])
         except (ValueError, KeyError):
             abort(400)
             return
@@ -255,22 +270,16 @@ def create_endpoints(app: Flask) -> None:
         user_notification = UserNotification.get(notification_id, user.id)
 
         if not user_notification:
-            return jsonify({
-                "error": True,
-                "message": "Cannot find notification"
-            })
+            return jsonify({"error": True, "message": "Cannot find notification"})
 
-        return jsonify({
-            "error": False,
-            "data": user_notification.to_dict()
-        })
+        return jsonify({"error": False, "data": user_notification.to_dict()})
 
-    @app.route('/notification/mark-as-read', methods=("POST",))
+    @app.route("/notification/mark-as-read", methods=("POST",))
     @ensure_auth
     def mark_notification_as_read(user: User):
         """Mark notification `id` as read."""
         try:
-            notification_id = int(request.form['id'])
+            notification_id = int(request.form["id"])
         except (ValueError, KeyError):
             abort(400)
             return
@@ -278,20 +287,14 @@ def create_endpoints(app: Flask) -> None:
         user_notification = UserNotification.get(notification_id, user.id)
 
         if not user_notification:
-            return jsonify({
-                "error": True,
-                "message": "Cannot find notification"
-            })
+            return jsonify({"error": True, "message": "Cannot find notification"})
 
         user_notification.read = True
         db.session.commit()
 
-        return jsonify({
-            "error": False,
-            "data": user_notification.to_dict()
-        })
+        return jsonify({"error": False, "data": user_notification.to_dict()})
 
-    @app.route('/notification/read-all', methods=("POST",))
+    @app.route("/notification/read-all", methods=("POST",))
     @ensure_auth
     def notification_mark_all_as_read(user: User):
         """Mark all notifications as read."""
@@ -302,7 +305,7 @@ def create_endpoints(app: Flask) -> None:
 
         return "", 200
 
-    @app.route('/company/following', methods=("POST",))
+    @app.route("/company/following", methods=("POST",))
     @ensure_auth
     def followed_companies(user: User):
         """
@@ -316,19 +319,19 @@ def create_endpoints(app: Flask) -> None:
         Returns list of companies and details.
         """
 
-        sort_by = request.form.get('sort_by')
+        sort_by = request.form.get("sort_by")
         companies = [obj for _, obj in interface.get_followed_companies(user.id)]
 
         if sort_by == "marketCapAsc":
-            companies.sort(key=lambda x: x['marketCap'])
+            companies.sort(key=lambda x: x["marketCap"])
         elif sort_by == "marketCapDesc":
-            companies.sort(key=lambda x: x['marketCap'], reverse=True)
+            companies.sort(key=lambda x: x["marketCap"], reverse=True)
         elif sort_by == "sentimentAsc":
-            companies.sort(key=lambda x: x['sentiment'])
+            companies.sort(key=lambda x: x["sentiment"])
         elif sort_by == "sentimentDesc":
-            companies.sort(key=lambda x: x['sentiment'], reverse=True)
+            companies.sort(key=lambda x: x["sentiment"], reverse=True)
         else:
-            companies.sort(key=lambda x: x['name'])
+            companies.sort(key=lambda x: x["name"])
 
         return jsonify(companies)
 
@@ -336,20 +339,18 @@ def create_endpoints(app: Flask) -> None:
     def new_article():
         """Get details of a news article. Accepts `id` of article."""
         try:
-            article_id = int(request.form['id'])
+            article_id = int(request.form["id"])
         except (ValueError, KeyError):
             abort(400)
             return
 
         article = interface.article_by_id(article_id)
 
-        return jsonify({
-               'error': True,
-               'articleId': article_id
-           } if article is None else {
-                'error': False,
-                'data': article.to_dict()
-            })
+        return jsonify(
+            {"error": True, "articleId": article_id}
+            if article is None
+            else {"error": False, "data": article.to_dict()}
+        )
 
     @app.route("/news/recent", methods=("GET",))
     def news_recent():
@@ -373,17 +374,21 @@ def create_endpoints(app: Flask) -> None:
         def to_dict(uc: UserCompany) -> dict:
             return {
                 **uc.to_dict(),
-                'company': interface.get_company_details_by_id(uc.company_id, user.id)[1]
+                "company": interface.get_company_details_by_id(uc.company_id, user.id)[
+                    1
+                ],
             }
-        
+
         def to_dict2(company_id: int) -> dict:
             return {
-                'companyId': int(company_id),
-                'company': interface.get_company_details_by_id(int(company_id), user.id)[1]
+                "companyId": int(company_id),
+                "company": interface.get_company_details_by_id(
+                    int(company_id), user.id
+                )[1],
             }
 
         try:
-            count = int(request.form['count'])
+            count = int(request.form["count"])
         except (ValueError, KeyError):
             count = 5
         if user.hard_ready >= 0:
@@ -391,7 +396,7 @@ def create_endpoints(app: Flask) -> None:
             recommendations = user.hard_recommend(count)
             print(recommendations)
             for i in range(len(recommendations)):
-                if (int(recommendations[i]) == 0):
+                if int(recommendations[i]) == 0:
                     recommendations = recommendations[:i]
                     break
             if len(recommendations) != 0:
@@ -435,59 +440,69 @@ def create_endpoints(app: Flask) -> None:
         Accepts: id/name/unique-identifier/article_count of company. Also, 'loadStock' flag.
         """
         try:
-            company_id = int(request.form['id'])
-            article_count = 4 if request.form.get('articleCount') is None else int(request.form.get('articleCount'))
+            company_id = int(request.form["id"])
+            article_count = (
+                4
+                if request.form.get("articleCount") is None
+                else int(request.form.get("articleCount"))
+            )
         except ValueError:
             abort(400)
             return
 
         load_stock = get_form_or_default("loadStock", "false") == "true"
-        response = interface.get_company_details_by_id(company_id, user.id, load_stock, True, article_count)
+        response = interface.get_company_details_by_id(
+            company_id, user.id, load_stock, True, article_count
+        )
         if response is None:
-            return jsonify({
-                "error": True,
-                "message": f"Cannot find company with id #{company_id}"
-            })
+            return jsonify(
+                {"error": True, "message": f"Cannot find company with id #{company_id}"}
+            )
 
-        return jsonify({
-            "error": False,
-            "data": response[1]
-        })
+        return jsonify({"error": False, "data": response[1]})
 
-    @app.route('/company/popular', methods=("POST",))
+    @app.route("/company/popular", methods=("POST",))
     @ensure_auth
     def get_popular_companies(user: User):
         """Return top `count` popular companies."""
         try:
-            max_count = int(request.form['count'])
+            max_count = int(request.form["count"])
             print(max_count)
         except (ValueError, KeyError):
             max_count = 10
 
-        company_ids = [user_company.company_id for user_company in db.session.query(UserCompany).all()]
-        most_common_companies = [elem for elem, _ in Counter(company_ids).most_common(max_count)]
-        popular = [interface.get_company_details_by_id(company_id, user.id)[1] for company_id in most_common_companies]
+        company_ids = [
+            user_company.company_id
+            for user_company in db.session.query(UserCompany).all()
+        ]
+        most_common_companies = [
+            elem for elem, _ in Counter(company_ids).most_common(max_count)
+        ]
+        popular = [
+            interface.get_company_details_by_id(company_id, user.id)[1]
+            for company_id in most_common_companies
+        ]
         return jsonify(popular)
 
-    @app.route('/company/stock', methods=("POST",))
+    @app.route("/company/stock", methods=("POST",))
     @ensure_auth
     def get_company_stock(user: User):
         # TODO
         pass
 
-    @app.route('/company/search', methods=("POST",))
+    @app.route("/company/search", methods=("POST",))
     @ensure_auth
     def company_search(user: User):
         """Search companies."""
         with lock:
             # ceo?: string
-            ceo: str | None = get_form_or_default('ceo', None)
+            ceo: str | None = get_form_or_default("ceo", None)
 
             # companyName?: string
-            company_name: str | None = get_form_or_default('name', None)
+            company_name: str | None = get_form_or_default("name", None)
 
             # sectors: int[]. List of sector IDs.
-            sectors: list[int] | None = request.form.getlist('sectors[]')
+            sectors: list[int] | None = request.form.getlist("sectors[]")
             if sectors is not None:
                 try:
                     sectors = list(map(int, sectors))
@@ -495,7 +510,9 @@ def create_endpoints(app: Flask) -> None:
                     sectors = None
 
             # sentimentRange: [float, float]. [lower, upper) range.
-            sentiment_range: list[float] | None = request.form.getlist('sentimentRange[]')
+            sentiment_range: list[float] | None = request.form.getlist(
+                "sentimentRange[]"
+            )
             if sentiment_range is not None:
                 if len(sentiment_range) == 2:
                     try:
@@ -506,7 +523,9 @@ def create_endpoints(app: Flask) -> None:
                     sentiment_range = None
 
             # marketCapRange: [float, float]. [lower, upper) range.
-            market_cap_range: list[float] | None = request.form.getlist('marketCapRange[]')
+            market_cap_range: list[float] | None = request.form.getlist(
+                "marketCapRange[]"
+            )
             if market_cap_range is not None:
                 if len(market_cap_range) == 2:
                     try:
@@ -517,7 +536,9 @@ def create_endpoints(app: Flask) -> None:
                     market_cap_range = None
 
             # stockPriceRange: [float, float]. [lower, upper) range.
-            stock_price_range: list[float] | None = request.form.getlist('stockPriceRange[]')
+            stock_price_range: list[float] | None = request.form.getlist(
+                "stockPriceRange[]"
+            )
             if stock_price_range is not None:
                 if len(stock_price_range) == 2:
                     try:
@@ -534,7 +555,11 @@ def create_endpoints(app: Flask) -> None:
                 sentiment=sentiment_range,
                 market_cap=market_cap_range,
                 stock_price=stock_price_range,
-                user_id=user.id
+                user_id=user.id,
             )
 
-            return jsonify(list(map(lambda c: interface.get_company_details(c, user.id), companies)))
+            return jsonify(
+                list(
+                    map(lambda c: interface.get_company_details(c, user.id), companies)
+                )
+            )

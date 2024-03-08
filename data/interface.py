@@ -1,15 +1,14 @@
 from asyncio import run
+from datetime import datetime
+from time import sleep
 from typing import Callable, Optional
+
+from flask import Flask
+from sqlalchemy import and_, asc, desc
 
 import data.api as api
 import data.database as db
-from sqlalchemy import asc, and_, desc
-from datetime import datetime
-from time import sleep
-from flask import Flask
-
 from analysis.analysis import sentiment_label, sentiment_score_to_text
-
 
 FloatRange = tuple[float, float]
 

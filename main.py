@@ -1,9 +1,11 @@
 from sys import argv
+from threading import Thread
+
+from dotenv import load_dotenv
+
+from data.interface import update_loop
 from server import constants
 from server.app import create_app
-from dotenv import load_dotenv
-from threading import Thread
-from data.interface import update_loop
 
 if __name__ == "__main__":
     options = argv[1:]
