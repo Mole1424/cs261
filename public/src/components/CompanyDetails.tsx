@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import axios, {AxiosResponse} from "axios";
 import {headerFormData} from "../constants";
-import {ICompanyDetailsWithStock} from "../types/ICompany";
+import {ICompanyDetails, IFullCompanyDetails} from "../types/ICompany";
 import {requestFollowCompany, requestUnfollowCompany} from "./CompanyCard";
 import StockInformation from "./StockInformation";
 import {getIconFromCategory} from "../util";
@@ -10,24 +10,34 @@ import DefaultCompanyIcon from "assets/company-default.svg";
 import TrendUpIcon from "assets/trend-up.svg";
 import TrendDownIcon from "assets/trend-down.svg";
 import "styles/company-details.scss";
+import ArticleCard from "./ArticleCard";
+import IViewProps from "../types/IViewProps";
 
 interface IProps {
   companyId: number;
 }
 
-export const CompanyDetails = ({ companyId }: IProps) => {
-  const [company, setCompany] = useState<ICompanyDetailsWithStock | null>(null);
+export const CompanyDetails = ({ companyId, eventCallback }: (IViewProps & IProps)) => {
+  const [company, setCompany] = useState<IFullCompanyDetails | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const [isFollowing, setIsFollowing] = useState(false);
 
-  useEffect(() => void requestCompanyDetails(companyId)
-    .then(response => {
-      if (response && !response.error) {
-        setCompany(response.data!);
-        setLogoUrl(response.data!.logoUrl);
-        setIsFollowing(response.data!.isFollowing);
-      }
-    }), []);
+  const [articleCount, setArticleCount] = useState(4);
+  const [receivedArticleCount, setReceivedArticleCount] = useState(-1);
+
+  /** Load company details. */
+  const loadCompanyDetails = async (numberOfArticles?: number) => {
+    const response = await requestCompanyDetails(companyId, numberOfArticles ?? articleCount);
+
+    if (response && !response.error) {
+      setCompany(response.data!);
+      setLogoUrl(response.data!.logoUrl);
+      setIsFollowing(response.data!.isFollowing);
+      setReceivedArticleCount(response.data!.articles.length);
+    }
+  };
+
+  useEffect(() => void loadCompanyDetails(), []);
 
   /** Click button to follow the given company. */
   const clickFollow = async (e: MouseEvent) => {
@@ -43,6 +53,12 @@ export const CompanyDetails = ({ companyId }: IProps) => {
    if (company && await requestUnfollowCompany(company.id)) {
      setIsFollowing(false);
    }
+  };
+
+  /** Click 'View More' link. */
+  const clickViewMore = () => {
+    setArticleCount(2 * articleCount);
+    void loadCompanyDetails(2 * articleCount);
   };
 
   if (company) {
@@ -82,6 +98,24 @@ export const CompanyDetails = ({ companyId }: IProps) => {
         <span className={'company-description'}>{company.description}</span>
 
         {company.stock && <StockInformation company={company} stock={company.stock} />}
+
+        {company.articles.length && (
+          <span className={'company-articles'}>
+            <span>Here are some related news articles:</span>
+            <div className={'content-cards'}>
+              <div className={'cards'}>
+                {company.articles.map(article =>
+                  <ArticleCard key={article.id} article={article} eventCallback={eventCallback} />
+                )}
+              </div>
+            </div>
+            {(receivedArticleCount === articleCount) && (
+              <span>
+                <a onClick={clickViewMore} className={'link'}>View More</a>
+              </span>
+            )}
+          </span>
+        )}
       </span>
     </main>;
   } else {
@@ -96,13 +130,14 @@ export default CompanyDetails;
 /**
  * Attempt to fetch details on the given company.
  */
-export async function requestCompanyDetails(companyId: number) {
+export async function requestCompanyDetails(companyId: number, articleCount?: number) {
   try {
     const response = await axios.post('/company/details', {
       id: companyId,
-      loadStock: true
+      loadStock: true,
+      articleCount
     }, headerFormData) as AxiosResponse<{
-      data?: ICompanyDetailsWithStock;
+      data?: IFullCompanyDetails;
       error: boolean;
     }, unknown>;
     return response.data;

@@ -61,7 +61,7 @@ export const Main = ({ user, onLogout, defaultTab, initialEvent }: IProps) => {
     switch (event.type) {
       case 'load-company':
         const companyId = (event as ILoadCompanyEvent).companyId;
-        setViewContent(<CompanyDetails companyId={companyId} />);
+        setViewContent(<CompanyDetails user={user} companyId={companyId} eventCallback={handleCallback} />);
         setSelectedTab(-1);
         break;
       case 'load-article':

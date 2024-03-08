@@ -436,7 +436,7 @@ def create_endpoints(app: Flask) -> None:
         """
         try:
             company_id = int(request.form['id'])
-            article_count = 4 if request.form.get('article_count') is None else int(request.form.get('article_count'))
+            article_count = 4 if request.form.get('articleCount') is None else int(request.form.get('articleCount'))
         except ValueError:
             abort(400)
             return

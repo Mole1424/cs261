@@ -40,6 +40,9 @@ export function getIconFromCategory(category: SentimentCategory): [string, strin
 
 export const formatNumber = (n: number) => n.toLocaleString("en-GB");
 
+/** Format the given sentiment score. */
+export const formatSentimentScore = (score: number) => formatNumber(+score.toPrecision(2));
+
 /** Capitalise the first character, lowercase the rest. */
 export const capitalise = (s: string) => s[0].toUpperCase() + s.substring(1);
 

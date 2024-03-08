@@ -1,6 +1,7 @@
 import ISector from "./ISector";
 import SentimentCategory from "./SentimentCategory";
 import IStock from "./IStock";
+import INewsArticle from "./INewsArticle";
 
 export interface ICompany {
   id: number;
@@ -22,10 +23,11 @@ export interface ICompanyDetails extends ICompany {
   isFollowing: boolean;
 }
 
-export interface ICompanyDetailsWithStock extends ICompany {
+export interface IFullCompanyDetails extends ICompany {
   sectors: ISector[];
   isFollowing: boolean;
   stock: IStock;
+  articles: INewsArticle[];
 }
 
 export interface IUserCompany {

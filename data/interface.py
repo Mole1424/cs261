@@ -390,6 +390,7 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
 
     news = run(api.get_news(company.name))  # get new news
     news_in_db = company.get_articles()
+    articles: list[db.Article] = []
     for i in range(len(news)):
         if i >= len(news_in_db):
             # if new article add it
@@ -405,13 +406,15 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
             article.update_sentiment(sentiment_label(news[i]["full_text"])["score"])
             db.db.session.add(db.ArticleCompany(article.id, company_id))
             db.db.session.commit()
+            articles.append(article)
         else:
             # add new info to existing article
             for key, value in news[i].items():
                 if value != "":
                     setattr(news_in_db[i], key, value)
+            articles.append(news_in_db[i])
     db.db.session.commit()
-    return news
+    return articles
 
 
 def recent_articles(count: int = 10) -> Optional[list[dict]]:

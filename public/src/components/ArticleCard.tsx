@@ -1,5 +1,5 @@
 import INewsArticle from "../types/INewsArticle";
-import {formatDateTime, getIconFromCategory} from "../util";
+import {formatDateTime, formatSentimentScore, getIconFromCategory} from "../util";
 
 import LinkIcon from "assets/link.svg";
 import "styles/article-card.scss";
@@ -27,7 +27,7 @@ export const ArticleCard = ({ article, eventCallback }: IProps) => {
     <span className={'article-title'}>{article.headline}</span>
     <span className={'article-sentiment'}>
       <img src={sentimentIcon} alt={article.sentimentCategory} className={'icon ' + sentimentIconClass} />
-      <span>{article.sentimentScore}</span>
+      <span>{formatSentimentScore(article.sentimentScore)}</span>
     </span>
     <span className={'article-link'}>
       <a target="_blank" href={article.url}>
