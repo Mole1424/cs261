@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # Create and launch Flask application
     app = create_app()
 
-    # Start the update loop DONT UNCOMMENT THIS AS ITS UNTESTED
+    # Start the update loop
     # update_thread = Thread(target=update_loop, args=(app,))
     # update_thread.daemon = True
     # update_thread.start()
