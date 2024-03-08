@@ -65,7 +65,11 @@ def is_valid_user(email: str, password: str) -> bool:
 
 
 def get_company_details_by_id(
-        company_id: int, user_id: int = None, load_stock=False, load_articles=False, article_count:int = 0
+    company_id: int,
+    user_id: int = None,
+    load_stock=False,
+    load_articles=False,
+    article_count: int = 0,
 ) -> tuple[db.Company, dict] | None:
     """Return (company, company_details). Get full stock details?"""
     if (
@@ -73,13 +77,20 @@ def get_company_details_by_id(
         .where(db.Company.id == company_id)
         .one_or_none()
     ):
-        return company, get_company_details(company, user_id, load_stock, load_articles, article_count)
+        return company, get_company_details(
+            company, user_id, load_stock, load_articles, article_count
+        )
     else:
         return None
 
 
 def get_company_details_by_symbol(
-        symbol: str, user_id: int = None, load_stock=False, repeat=True, load_articles=False, article_count:int = 0
+    symbol: str,
+    user_id: int = None,
+    load_stock=False,
+    repeat=True,
+    load_articles=False,
+    article_count: int = 0,
 ) -> tuple[db.Company, dict] | None:
     """Return (company, company_details). Get full stock details?"""
     if (
@@ -88,7 +99,9 @@ def get_company_details_by_symbol(
         .one_or_none()
     ):
         company = db.db.session.query(db.Company).filter_by(id=stock.company_id).first()
-        return company, get_company_details(company, user_id, load_stock, load_articles, article_count)
+        return company, get_company_details(
+            company, user_id, load_stock, load_articles, article_count
+        )
     elif repeat:
         add_company(symbol)
         return get_company_details_by_symbol(
@@ -99,7 +112,11 @@ def get_company_details_by_symbol(
 
 
 def get_company_details(
-        company: db.Company, user_id: int = None, load_stock=False, load_articles=False, article_count:int = 0
+    company: db.Company,
+    user_id: int = None,
+    load_stock=False,
+    load_articles=False,
+    article_count: int = 0,
 ) -> dict:
     """Get company details, given the company object."""
 
@@ -138,9 +155,18 @@ def get_company_details(
         details["isFollowing"] = (
             False if user_company is None else user_company.is_following()
         )
-    #returns article_count most recent articles(default 4)
+    # returns article_count most recent articles(default 4)
     if load_articles:
-        details["articles"] = [article.to_dict() for article in get_company_articles(company.id)][:article_count]
+        articles = get_company_articles(company.id)
+        if len(articles) > 0:
+            if type(articles[0]) == db.Article:
+                details["articles"] = list(
+                    map(db.Article.to_dict, articles[:article_count])
+                )
+            else:
+                details["articles"] = articles[:article_count]
+        else:
+            details["articles"] = []
 
     return details
 
