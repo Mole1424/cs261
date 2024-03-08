@@ -141,6 +141,7 @@ def create_endpoints(app: Flask) -> None:
 
         # Create user
         user = interface.create_user(email, name, password, opt_email)
+        user.set_distances()
 
         # Log the user in?
         if login_after:
@@ -401,7 +402,6 @@ def create_endpoints(app: Flask) -> None:
                     break
             if len(recommendations) != 0:
                 return jsonify(list(map(to_dict2, recommendations)))
-        user.set_distances()
         recommendations = user.soft_recommend(count)
         return jsonify(list(map(to_dict, recommendations)))
 

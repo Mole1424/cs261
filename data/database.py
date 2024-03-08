@@ -69,6 +69,7 @@ class User(db.Model):
         ):
             db.session.add(UserSector(user_id=self.id, sector_id=sector_id))
             db.session.commit()
+            self.set_distances()
         return db.session.query(Sector).where(Sector.id == sector_id).first()
 
     def remove_sector(self, sector_id: int) -> None:
@@ -77,6 +78,7 @@ class User(db.Model):
             UserSector.user_id == self.id, UserSector.sector_id == sector_id
         ).delete()
         db.session.commit()
+        self.set_distances()
 
     def get_companies(self) -> list[Company]:
         """Return list of companies this user is interested in."""
@@ -112,6 +114,9 @@ class User(db.Model):
             self.hard_ready += 1
             db.session.commit()
 
+        if self.hard_ready == 0:
+            self.hard_train(True)
+
     def remove_company(self, company_id: int) -> None:
         """Remove a company from user."""
         existing_record = (
@@ -125,6 +130,9 @@ class User(db.Model):
                 self.hard_ready += 1
             existing_record.distance = -2
         db.session.commit()
+
+        if self.hard_ready == 0:
+            self.hard_train(True)
 
     def set_distances(self):
         non_followed = (
@@ -181,8 +189,8 @@ class User(db.Model):
         )
         return recommendations[:k]
 
-    def hard_train(self) -> bool:
-        if 0 <= self.hard_ready <= 5:
+    def hard_train(self, first=False) -> bool:
+        if 0 <= self.hard_ready <= 5 and not first:
             return False
         user_id = self.id
 
