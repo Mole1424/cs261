@@ -334,6 +334,8 @@ class UserNotification(db.Model):
     def __init__(self, user_id: int, notification_id: int):
         self.user_id = user_id
         self.notification_id = notification_id
+        self.received = datetime.now()
+        self.read = False
 
     def to_dict(self) -> dict:
         return {
@@ -491,7 +493,7 @@ class Company(db.Model):
         return (
             db.session.query(Article)
             .join(ArticleCompany, Article.id == ArticleCompany.article_id)
-            .where(ArticleCompany.company_id == self.id)\
+            .where(ArticleCompany.company_id == self.id)
             .order_by(desc(Article.date))
             .all()
         )

@@ -8,7 +8,7 @@ from datetime import datetime
 from time import sleep
 from flask import Flask
 
-from analysis.analysis import sentiment_label
+from analysis.analysis import sentiment_label, sentiment_score_to_text
 
 
 FloatRange = tuple[float, float]
@@ -396,8 +396,51 @@ def update_company_info(company_id: int) -> None:
     company.last_scraped = datetime.now()
     company.market_cap = combined_cap
     db.db.session.commit()
-    get_company_articles(company_id)
+    articles = get_company_articles(company_id)
+    articles.sort(key=lambda x: abs(x.sentiment), reverse=True)
+    if len(articles) > 0:
+        if sentiment_score_to_text(abs(articles[0].sentiment)) >= 0.5:
+            add_article_notification(company, articles[0])
+    old_sentiment = company.sentiment
     company.update_sentiment()
+    if abs(old_sentiment - company.sentiment) > 0.25:
+        diff_percent = abs(old_sentiment - company.sentiment) / old_sentiment * 100
+        add_company_notification(company, diff_percent)
+
+
+def add_article_notification(company: db.Company, article: db.Article) -> None:
+    """Add article notification for company."""
+    message = f"""There has been a recent news article about {company.name} that was {sentiment_score_to_text(article.sentiment).lower()}. 
+    {article.headline} by {article.publisher}.
+    You can read it at <a href="{article.url}">{article.url}</a>"""
+
+    notification = db.Notification.create_article_notification(article.id, message)
+    db.db.session.add(notification)
+    db.db.session.commit()
+    users = [
+        get_user_by_id(user_company.user_id)
+        for user_company in db.UserCompany.get_by_company(company.id)
+    ]
+    for user in users:
+        db.db.session.add(db.UserNotification(user.id, notification.id))
+    db.db.session.commit()
+
+
+def add_company_notification(company: db.Company, sentiment_diff: float) -> None:
+    message = f"""{company.name} has recieved an update.
+    It's sentiment score has changed by {sentiment_diff}%.
+    Find out more at <a href="localhost:5000/#company/{company.id}">localhost:5000/#company/{company.id}</a>"""
+
+    notification = db.Notification.create_company_notification(company.id, message)
+    db.db.session.add(notification)
+    db.db.session.commit()
+    users = [
+        get_user_by_id(user_company.user_id)
+        for user_company in db.UserCompany.get_by_company(company.id)
+    ]
+    for user in users:
+        db.db.session.add(db.UserNotification(user.id, notification.id))
+    db.db.session.commit()
 
 
 def get_company_articles(company_id: int) -> list[db.Article] | None:
