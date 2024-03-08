@@ -398,7 +398,7 @@ def update_company_info(company_id: int) -> None:
     articles = get_company_articles(company_id)
     articles.sort(key=lambda x: abs(x.sentiment), reverse=True)
     if len(articles) > 0:
-        if sentiment_score_to_text(abs(articles[0].sentiment)) >= 0.5:
+        if sentiment_score_to_text(abs(articles[0].sentiment)) == "Very Positive":
             add_article_notification(company, articles[0])
     old_sentiment = company.sentiment
     company.update_sentiment()
