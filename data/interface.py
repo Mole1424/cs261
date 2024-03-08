@@ -75,7 +75,7 @@ def get_company_details_by_id(
         company := db.db.session.query(db.Company)
         .where(db.Company.id == company_id)
         .one_or_none()
-    ):
+    ):  # get company
         return company, get_company_details(
             company, user_id, load_stock, load_articles, article_count
         )
@@ -102,6 +102,7 @@ def get_company_details_by_symbol(
             company, user_id, load_stock, load_articles, article_count
         )
     elif repeat:
+        # if company does not exist add it, then recall function (no recursion)
         add_company(symbol)
         return get_company_details_by_symbol(
             symbol, user_id, load_stock, False, load_articles, article_count
@@ -119,10 +120,12 @@ def get_company_details(
 ) -> dict:
     """Get company details, given the company object."""
 
+    # add pre-existing company details
     details = {
         **company.to_dict(),
     }
 
+    # Add sectors that a company is in
     company_sectors = db.CompanySector.get_by_company(company.id)
     sectors = []
     for sector_db in company_sectors:
@@ -135,12 +138,14 @@ def get_company_details(
             sectors.append(sector)
     details["sectors"] = [sector.to_dict() for sector in sectors]
 
-    # Provide full stock data?
+    # gets all stocks for a company
     stocks = db.Stock.get_all_by_company(company.id)
     if len(stocks) > 0:
         if load_stock:
+            # primary stock
             details["stock"] = stocks[0].to_dict()
         else:
+            # stock delta is the change in stock price over the last day
             details["stockDelta"] = stocks[0].stock_change
 
     if load_stock:
@@ -154,10 +159,12 @@ def get_company_details(
         details["isFollowing"] = (
             False if user_company is None else user_company.is_following()
         )
-    # returns article_count most recent articles(default 4)
+
+    # returns article_count most recent articles(default 0)
     if load_articles:
         articles = get_company_articles(company.id)
         if len(articles) > 0:
+            # article can return a list of articles or a list of article objects
             if type(articles[0]) == db.Article:
                 details["articles"] = list(
                     map(db.Article.to_dict, articles[:article_count])
@@ -283,6 +290,7 @@ def add_company(symbol: str, get_news=False) -> db.Company | None:
             .one_or_none()
         )
 
+    # get indo from api and add
     info = run(api.get_company_info(symbol))
     company = db.Company(
         name=info["name"],
@@ -302,15 +310,19 @@ def add_company(symbol: str, get_news=False) -> db.Company | None:
         .where(db.Sector.name == sector_name)
         .one_or_none()
     ):
+        # add sector if it does not exist
         sector = db.Sector(sector_name)
         db.db.session.add(sector)
         db.db.session.commit()
 
+    # create company sector relationship
     db.db.session.add(db.CompanySector(company.id, sector.id))
     db.db.session.commit()
 
+    # add stocks to company
     add_stock(symbol, company.id)
 
+    # if requested, get news articles and update sentiment
     if get_news:
         get_company_articles(company.id)
         company.update_sentiment()
@@ -321,12 +333,14 @@ def add_stock(symbol: str, company_id: int) -> db.Stock | None:
     """Add a stock to a company."""
     if db.db.session.query(db.Stock).where(db.Stock.symbol == symbol).one_or_none():
         return None
+
     stock_info = run(api.get_stock_info(symbol))
     stock = db.Stock(
         symbol,
         company_id,
         stock_info["exchange"],
         stock_info["market_cap"],
+        # default to 0 if no stock day to avoid errors
         stock_info["stock_day"][-1] if stock_info["stock_day"] else 0,
         (
             stock_info["stock_day"][-1] - stock_info["stock_day"][0]
@@ -357,11 +371,13 @@ def update_company_info(company_id: int) -> None:
     new_symbols = run(api.get_symbols(company.name))
 
     for symbol in company_symbols:
+        # if symbol does not exist in new symbols, delete it
         if symbol.symbol not in new_symbols:
             db.db.session.delete(symbol)
             db.db.session.commit()
             continue
 
+        # get stock info and update stock
         stock_info = run(api.get_stock_info(symbol.symbol))
 
         for key, value in stock_info.items():  # update stock info
@@ -380,14 +396,18 @@ def update_company_info(company_id: int) -> None:
             else 0
         )
         db.db.session.commit()
+
+        # add market cap to combined cap
         combined_cap += symbol.market_cap if symbol.market_cap else 0
 
+    # add new symbols
     for symbol in new_symbols:
         if not (
             db.db.session.query(db.Stock).where(db.Stock.symbol == symbol).one_or_none()
         ):
             add_stock(symbol, company_id)
 
+    # update company info
     company_info = run(api.get_company_info(company_symbols[0].symbol))
     for key, value in company_info.items():
         if value != "":
@@ -395,12 +415,18 @@ def update_company_info(company_id: int) -> None:
     company.last_scraped = datetime.now()
     company.market_cap = combined_cap
     db.db.session.commit()
+
+    # get new articles and update sentiment
     articles = get_company_articles(company_id)
+
+    # sort articles by sentiment and add notification if very positive/negative
     articles.sort(key=lambda x: abs(x.sentiment), reverse=True)
     if len(articles) > 0:
         if sentiment_score_to_text(abs(articles[0].sentiment)) == "Very Positive":
             add_article_notification(company, articles[0])
     old_sentiment = company.sentiment
+
+    # update sentiment (average of all articles) then add notigication if significant change
     company.update_sentiment()
     if abs(old_sentiment - company.sentiment) > 0.25:
         diff_percent = abs(old_sentiment - company.sentiment) / old_sentiment * 100
@@ -409,13 +435,18 @@ def update_company_info(company_id: int) -> None:
 
 def add_article_notification(company: db.Company, article: db.Article) -> None:
     """Add article notification for company."""
+
+    # set message
     message = f"""There has been a recent news article about {company.name} that was {sentiment_score_to_text(article.sentiment).lower()}. 
     {article.headline} by {article.publisher}.
     You can read it at <a href="{article.url}">{article.url}</a>"""
 
+    # add notification to db
     notification = db.Notification.create_article_notification(article.id, message)
     db.db.session.add(notification)
     db.db.session.commit()
+
+    # add notification to all users following the company
     users = [
         get_user_by_id(user_company.user_id)
         for user_company in db.UserCompany.get_by_company(company.id)
@@ -449,6 +480,7 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
     if not company:
         return None
 
+    # if company has been scraped in the last day, return articles (avoids excessive api calls)
     if not (
         company.last_scraped is None or (datetime.now() - company.last_scraped).days > 1
     ):
@@ -457,8 +489,10 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
             return articles
 
     news = run(api.get_news(company.name))  # get new news
-    news_in_db = company.get_articles()
+    news_in_db = company.get_articles()  # get news in db
     articles: list[db.Article] = []
+
+    # iterate through news and update db with new articles
     for i in range(len(news)):
         if i >= len(news_in_db):
             # if new article add it

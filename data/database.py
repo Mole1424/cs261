@@ -92,6 +92,7 @@ class User(db.Model):
     def add_company(self, company_id: int) -> None:
         """Add a company to user."""
 
+        # gets current state of follow
         current = (
             db.session.query(UserCompany)
             .where(UserCompany.user_id == self.id, UserCompany.company_id == company_id)
@@ -108,6 +109,7 @@ class User(db.Model):
             ).update({"distance": -1})
             db.session.commit()
         else:
+            # if not already following
             db.session.add(
                 UserCompany(user_id=self.id, company_id=company_id, distance=-1)
             )
@@ -135,6 +137,7 @@ class User(db.Model):
             self.hard_train(True) # User is finally ready to train since it has enough activity
 
     def set_distances(self):
+        # get list of all companies a user is not following
         non_followed = (
             db.session.query(Company.id)
             .outerjoin(
@@ -148,6 +151,7 @@ class User(db.Model):
         ) # Get all companies the user doesn't follow
 
         for company in non_followed:
+            # compute distance between user and company
             distance = (
                 db.session.query(UserSector)
                 .outerjoin(
@@ -270,8 +274,8 @@ class Notification(db.Model):
     __tablename__ = "Notification"
 
     id = db.Column(db.Integer, primary_key=True)
-    target_id = db.Column(db.Integer)
-    target_type = db.Column(db.Integer)
+    target_id = db.Column(db.Integer)  # the article or company id
+    target_type = db.Column(db.Integer)  # 1 for company, 2 for article
     message = db.Column(db.String)
 
     def __init__(self, target_id: int, target_type: int, message: str):
@@ -475,6 +479,7 @@ class Company(db.Model):
         articles = self.get_articles()
         if len(articles) == 0:
             return 0
+        # sentiment is the average of all article's sentiment
         self.sentiment = sum(map(lambda a: a.sentiment, articles)) / len(articles)
         db.session.commit()
 
@@ -531,16 +536,13 @@ class Company(db.Model):
             .all()
         )
 
-    def get_stocks(self) -> list[Stock]:
-        """Return list of stocks that have this company."""
-        return db.session.query(Stock).where(Stock.company_id == self.id).all()
-
     def to_dict(self) -> dict:
         return {
             "id": self.id,
             "name": self.name,
             "url": self.url,
-            "logoUrl": "https://logo.clearbit.com/" + self.url,
+            "logoUrl": "https://logo.clearbit.com/"
+            + self.url,  # use clearbit to get logo
             "description": self.description,
             "location": self.location,
             "marketCap": self.market_cap,
