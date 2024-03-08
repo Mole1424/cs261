@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import werkzeug.security
 from datetime import datetime
 from analysis.analysis import sentiment_label, sentiment_score_to_text
-from sqlalchemy import and_
+from sqlalchemy import and_, desc
 from data.api import get_article_content
 import pandas as pd
 import scipy.sparse as sp
@@ -491,7 +491,8 @@ class Company(db.Model):
         return (
             db.session.query(Article)
             .join(ArticleCompany, Article.id == ArticleCompany.article_id)
-            .where(ArticleCompany.company_id == self.id)
+            .where(ArticleCompany.company_id == self.id)\
+            .order_by(desc(Article.date))
             .all()
         )
 

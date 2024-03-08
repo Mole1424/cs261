@@ -432,16 +432,17 @@ def create_endpoints(app: Flask) -> None:
     @ensure_auth
     def get_company_details(user: User):
         """
-        Accepts: id/name/unique-identifier of company. Also, 'loadStock' flag.
+        Accepts: id/name/unique-identifier/article_count of company. Also, 'loadStock' flag.
         """
         try:
             company_id = int(request.form['id'])
+            article_count = 4 if request.form.get('article_count') is None else int(request.form.get('article_count'))
         except ValueError:
             abort(400)
             return
 
         load_stock = get_form_or_default("loadStock", "false") == "true"
-        response = interface.get_company_details_by_id(company_id, user.id, load_stock)
+        response = interface.get_company_details_by_id(company_id, user.id, load_stock, True, article_count)
         if response is None:
             return jsonify({
                 "error": True,
@@ -459,6 +460,7 @@ def create_endpoints(app: Flask) -> None:
         """Return top `count` popular companies."""
         try:
             max_count = int(request.form['count'])
+            print(max_count)
         except (ValueError, KeyError):
             max_count = 10
 
