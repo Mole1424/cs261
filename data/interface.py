@@ -65,7 +65,7 @@ def is_valid_user(email: str, password: str) -> bool:
 
 
 def get_company_details_by_id(
-        company_id: int, user_id: int = None, load_stock=False, load_articles=False, article_count:int = 4
+        company_id: int, user_id: int = None, load_stock=False, load_articles=False, article_count:int = 0
 ) -> tuple[db.Company, dict] | None:
     """Return (company, company_details). Get full stock details?"""
     if (
@@ -79,7 +79,7 @@ def get_company_details_by_id(
 
 
 def get_company_details_by_symbol(
-        symbol: str, user_id: int = None, load_stock=False, repeat=True, load_articles=False, article_count:int = 4
+        symbol: str, user_id: int = None, load_stock=False, repeat=True, load_articles=False, article_count:int = 0
 ) -> tuple[db.Company, dict] | None:
     """Return (company, company_details). Get full stock details?"""
     if (
@@ -99,7 +99,7 @@ def get_company_details_by_symbol(
 
 
 def get_company_details(
-        company: db.Company, user_id: int = None, load_stock=False, load_articles=False, article_count:int = 4
+        company: db.Company, user_id: int = None, load_stock=False, load_articles=False, article_count:int = 0
 ) -> dict:
     """Get company details, given the company object."""
 
