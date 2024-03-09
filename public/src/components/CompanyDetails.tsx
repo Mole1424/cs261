@@ -21,6 +21,7 @@ export const CompanyDetails = ({ companyId, eventCallback }: (IViewProps & IProp
   const [company, setCompany] = useState<IFullCompanyDetails | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [stockIndex, setStockIndex] = useState(0);
 
   const [articleCount, setArticleCount] = useState(4);
   const [receivedArticleCount, setReceivedArticleCount] = useState(-1);
@@ -82,12 +83,8 @@ export const CompanyDetails = ({ companyId, eventCallback }: (IViewProps & IProp
           </>
         }
         <span className={'company-stock-change'}>
-          {company.stock
-            ? <>
-              {company.stock.stockChange == 0 ? '' : <img alt={'Stock trend icon'} src={company.stock.stockChange < 0 ? TrendDownIcon : TrendUpIcon} className={'icon style-' + (company.stock.stockChange < 0 ? 'red' : 'green')} />}
-              <span>{Math.abs(company.stock.stockChange).toFixed(1)}%</span>
-            </>
-            : 'Stock Data Unavailable'}
+            {company.stockDelta == 0 ? '' : <img alt={'Stock trend icon'} src={company.stockDelta < 0 ? TrendDownIcon : TrendUpIcon} className={'icon style-' + (company.stockDelta < 0 ? 'red' : 'green')} />}
+            <span>{Math.abs(company.stockDelta).toFixed(1)}%</span>
         </span>
         <span className={'company-sentiment'}>
           <img src={sentimentIcon} alt={company.sentimentCategory} className={'icon ' + sentimentIconClass} />
@@ -96,8 +93,16 @@ export const CompanyDetails = ({ companyId, eventCallback }: (IViewProps & IProp
         <span className={'company-ceo'}>{company.ceo}</span>
         <img className={'company-logo'} alt={'Company logo'} src={logoUrl} onError={() => setLogoUrl(DefaultCompanyIcon)} />
         <span className={'company-description'}>{company.description}</span>
+          {company.stocks.length > 1 && <span className={'company-stock-exchange'}>
+            <span>View stock data for exchange </span>
+            <select onChange={e => setStockIndex(+e.target.value)}>
+              {company.stocks.map((stock, idx) =>
+                <option key={stock.exchange} value={idx}>{stock.exchange}</option>
+              )}
+            </select>
+          </span>}
 
-        {company.stock && <StockInformation company={company} stock={company.stock} />}
+        {company.stocks && <StockInformation company={company} stock={company.stocks[stockIndex]} />}
 
         {company.articles.length && (
           <span className={'company-articles'}>

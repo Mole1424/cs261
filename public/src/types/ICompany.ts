@@ -23,10 +23,8 @@ export interface ICompanyDetails extends ICompany {
   isFollowing: boolean;
 }
 
-export interface IFullCompanyDetails extends ICompany {
-  sectors: ISector[];
-  isFollowing: boolean;
-  stock: IStock;
+export interface IFullCompanyDetails extends ICompanyDetails {
+  stocks: IStock[];
   articles: INewsArticle[];
 }
 

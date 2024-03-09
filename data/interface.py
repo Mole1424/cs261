@@ -138,20 +138,14 @@ def get_company_details(
             sectors.append(sector)
     details["sectors"] = [sector.to_dict() for sector in sectors]
 
-    # gets all stocks for a company
+    # Gets all stocks for a company
     stocks = db.Stock.get_all_by_company(company.id)
-    if len(stocks) > 0:
-        if load_stock:
-            # primary stock
-            details["stock"] = stocks[0].to_dict()
-        else:
-            # stock delta is the change in stock price over the last day
-            details["stockDelta"] = stocks[0].stock_change
+
+    # Calculate avg. stock change
+    details["stockDelta"] = sum(map(lambda s: s.stock_change, stocks)) / len(stocks)
 
     if load_stock:
-        details["allStocks"] = [
-            (stock.to_dict(), stock.stock_change) for stock in stocks
-        ]
+        details["stocks"] = list(map(db.Stock.to_dict, stocks))
 
     # If user was provided, check if they are following the company
     if user_id is not None:
