@@ -141,7 +141,6 @@ def create_endpoints(app: Flask) -> None:
 
         # Create user
         user = interface.create_user(email, name, password, opt_email)
-        user.set_distances()
 
         # Log the user in?
         if login_after:
