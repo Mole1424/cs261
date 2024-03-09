@@ -776,10 +776,15 @@ class Article(db.Model):
         """Return the content of the article."""
         return get_article_content(self.url)
 
+    def __hash__(self):
+        return hash(self.url)
+
+    def __eq__(self, other):
+        return self.url == other.url
+
     @staticmethod
     def get_by_id(article_id: int) -> Article | None:
         return db.session.query(Article).filter(Article.id == article_id).first()
-
 
 class Story(db.Model):
     __tablename__ = "Story"

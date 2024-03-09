@@ -520,14 +520,17 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
 
 
 def recent_articles(count: int = 10) -> Optional[list[dict]]:
-    return list(
-        map(
-            db.Article.to_dict,
-            db.db.session.query(db.Article)
-            .order_by(desc(db.Article.date))
-            .limit(count),
-        )
+    """accepts "count" of articles to display, returns list of articles mapped to a dictionary, sorted by date"""
+    articles = set(
+    db.db.session.query(db.Article)
+    .order_by(desc(db.Article.date))
+    .limit(50)
+    .all()
     )
+    # Map the articles to dictionaries and sort them based on the date attribute
+    sorted_articles = sorted(map(db.Article.to_dict, articles), key=lambda x: x['published'], reverse=True)[:count]
+    return sorted_articles
+
 
 
 def article_by_id(article_id: int = None) -> db.Article | None:
