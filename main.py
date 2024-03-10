@@ -17,9 +17,9 @@ if __name__ == "__main__":
     app = create_app()
 
     # Start the update loop
-    # update_thread = Thread(target=update_loop, args=(app,))
-    # update_thread.daemon = True
-    # update_thread.start()
+    update_thread = Thread(target=update_loop, args=(app,))
+    update_thread.daemon = True
+    update_thread.start()
 
     app.run(
         host=constants.FLASK_HOST,
