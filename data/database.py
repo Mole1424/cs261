@@ -195,6 +195,8 @@ class User(db.Model):
 
     def hard_train(self, first=False) -> bool:
         if 0 <= self.hard_ready <= 5 and not first: # Check if the user needs training or retraining
+            print("Didn't train, hard_ready is", self.hard_ready)
+            
             return False
         user_id = self.id
 
@@ -221,6 +223,9 @@ class User(db.Model):
 
         # Retrain model only on the new data
 
+        print("Trained user ", user_id)
+        print("Trained on items", items)
+
         model.partial_fit_users([user_id], sparse_data[[user_id]])
 
         model.partial_fit_items(items, sparse_data1[items])
@@ -235,10 +240,9 @@ class User(db.Model):
     def hard_recommend(self, k: int) -> list[int]:
         """Return `k` user recommendations."""
 
-        model = load("data/rec_model.npz") # Load the trained model
-
         user_items = db.session.query(UserCompany).filter(UserCompany.distance < 0)
 
+        last = 0
         users = []
         items = []
         feedback = []
@@ -249,8 +253,18 @@ class User(db.Model):
                 feedback.append(1)
             else:
                 feedback.append(-1)
+            if entry.company_id > last:
+                last = entry.company_id
+
+        last_item = int(db.session.query(Company).count())
+        if (last < last_item):
+            self.hard_train(True)
+
+        model = load("data/rec_model.npz") # Load the trained model
 
         sparse_data = sp.csr_matrix((feedback, (users, items)))
+
+        print("feedback is: ", sparse_data)
 
         recommendations, scores = model.recommend(
             self.id, sparse_data[[self.id]], N=k, filter_already_liked_items=True

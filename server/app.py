@@ -75,6 +75,6 @@ def init_train_hard():
 
     sparse_data = sp.csr_matrix((feedback, (users, items)))
 
-    model = AlternatingLeastSquares(factors=10, regularization=0.1, iterations=50)
+    model = AlternatingLeastSquares(factors=10, regularization=0.5, iterations=50)
     model.fit(sparse_data)
     dump(model, "data/rec_model.npz")
