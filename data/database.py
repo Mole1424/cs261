@@ -69,7 +69,7 @@ class User(db.Model):
         ):
             db.session.add(UserSector(user_id=self.id, sector_id=sector_id))
             db.session.commit()
-            self.set_distances() # Distance need to be recalculated
+            self.set_distances()  # Distance need to be recalculated
         return db.session.query(Sector).where(Sector.id == sector_id).first()
 
     def remove_sector(self, sector_id: int) -> None:
@@ -78,7 +78,7 @@ class User(db.Model):
             UserSector.user_id == self.id, UserSector.sector_id == sector_id
         ).delete()
         db.session.commit()
-        self.set_distances() # Distance need to be recalculated
+        self.set_distances()  # Distance need to be recalculated
 
     def get_companies(self) -> list[Company]:
         """Return list of companies this user is interested in."""
@@ -103,7 +103,7 @@ class User(db.Model):
             if (
                 current.distance != -2 or self.hard_ready > 0
             ):  # Make sure the user is not refollowing again since this would not count as new activty
-                self.hard_ready += 1 # User has increased its activity by one
+                self.hard_ready += 1  # User has increased its activity by one
             db.session.query(UserCompany).filter_by(
                 user_id=self.id, company_id=company_id
             ).update({"distance": -1})
@@ -113,11 +113,13 @@ class User(db.Model):
             db.session.add(
                 UserCompany(user_id=self.id, company_id=company_id, distance=-1)
             )
-            self.hard_ready += 1 # User has increased its activity by one
+            self.hard_ready += 1  # User has increased its activity by one
             db.session.commit()
 
         if self.hard_ready == 0:
-            self.hard_train(True) # User is finally ready to train since it has enough activity
+            self.hard_train(
+                True
+            )  # User is finally ready to train since it has enough activity
 
     def remove_company(self, company_id: int) -> None:
         """Remove a company from user."""
@@ -128,13 +130,19 @@ class User(db.Model):
         )
 
         if existing_record:
-            if self.hard_ready > 0:  # Make sure the user is not unfollowing since this would not count as new activty
+            if (
+                self.hard_ready > 0
+            ):  # Make sure the user is not unfollowing since this would not count as new activty
                 self.hard_ready += 1
-            existing_record.distance = -2 # Note that the user has unfollowed this company for recommendation purpouses
+            existing_record.distance = (
+                -2
+            )  # Note that the user has unfollowed this company for recommendation purpouses
         db.session.commit()
 
         if self.hard_ready == 0:
-            self.hard_train(True) # User is finally ready to train since it has enough activity
+            self.hard_train(
+                True
+            )  # User is finally ready to train since it has enough activity
 
     def set_distances(self):
         # get list of all companies a user is not following
@@ -148,7 +156,7 @@ class User(db.Model):
             )
             .filter((UserCompany.user_id == None) | (UserCompany.distance != -1))
             .all()
-        ) # Get all companies the user doesn't follow
+        )  # Get all companies the user doesn't follow
 
         for company in non_followed:
             # compute distance between user and company
@@ -166,7 +174,7 @@ class User(db.Model):
                     (UserSector.user_id == None) | (CompanySector.company_id == None)
                 )
                 .count()
-            ) # Calculate the number of differences in sectors between the user and the company (the distance)
+            )  # Calculate the number of differences in sectors between the user and the company (the distance)
 
             existing_record = (
                 db.session.query(UserCompany)
@@ -194,9 +202,10 @@ class User(db.Model):
         return recommendations[:k]
 
     def hard_train(self, first=False) -> bool:
-        if 0 <= self.hard_ready <= 5 and not first: # Check if the user needs training or retraining
-            print("Didn't train, hard_ready is", self.hard_ready)
-            
+        if (
+            0 <= self.hard_ready <= 5 and not first
+        ):  # Check if the user needs training or retraining
+
             return False
         user_id = self.id
 
@@ -223,17 +232,13 @@ class User(db.Model):
 
         # Retrain model only on the new data
 
-        print("Trained user ", user_id)
-        print("Trained on items", items)
-
         model.partial_fit_users([user_id], sparse_data[[user_id]])
 
         model.partial_fit_items(items, sparse_data1[items])
 
+        dump(model, "data/rec_model.npz")  # Save the model
 
-        dump(model, "data/rec_model.npz") # Save the model
-
-        self.hard_ready = 0 # Restart count to know when to retrain
+        self.hard_ready = 0  # Restart count to know when to retrain
         db.session.commit()
         return True
 
@@ -257,14 +262,12 @@ class User(db.Model):
                 last = entry.company_id
 
         last_item = int(db.session.query(Company).count())
-        if (last < last_item):
+        if last < last_item:
             self.hard_train(True)
 
-        model = load("data/rec_model.npz") # Load the trained model
+        model = load("data/rec_model.npz")  # Load the trained model
 
         sparse_data = sp.csr_matrix((feedback, (users, items)))
-
-        print("feedback is: ", sparse_data)
 
         recommendations, scores = model.recommend(
             self.id, sparse_data[[self.id]], N=k, filter_already_liked_items=True
@@ -799,6 +802,7 @@ class Article(db.Model):
     @staticmethod
     def get_by_id(article_id: int) -> Article | None:
         return db.session.query(Article).filter(Article.id == article_id).first()
+
 
 class Story(db.Model):
     __tablename__ = "Story"

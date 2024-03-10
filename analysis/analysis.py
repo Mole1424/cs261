@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 from implicit.als import AlternatingLeastSquares
-
 # Sentiment Analysis Modules
 from nltk import download as nltk_download
 from nltk import tokenize
