@@ -141,8 +141,8 @@ def get_company_details(
     # Gets all stocks for a company
     stocks = db.Stock.get_all_by_company(company.id)
 
-    # Calculate avg. stock change
-    details["stockDelta"] = sum(map(lambda s: s.stock_change, stocks)) / len(stocks)
+    # Calculate stock change
+    details["stockDelta"] = stocks[0].stock_change if len(stocks) > 0 else 0
 
     if load_stock:
         details["stocks"] = list(map(db.Stock.to_dict, stocks))
@@ -516,15 +516,13 @@ def get_company_articles(company_id: int) -> list[db.Article] | None:
 def recent_articles(count: int = 10) -> Optional[list[dict]]:
     """accepts "count" of articles to display, returns list of articles mapped to a dictionary, sorted by date"""
     articles = set(
-    db.db.session.query(db.Article)
-    .order_by(desc(db.Article.date))
-    .limit(50)
-    .all()
+        db.db.session.query(db.Article).order_by(desc(db.Article.date)).limit(50).all()
     )
     # Map the articles to dictionaries and sort them based on the date attribute
-    sorted_articles = sorted(map(db.Article.to_dict, articles), key=lambda x: x['published'], reverse=True)[:count]
+    sorted_articles = sorted(
+        map(db.Article.to_dict, articles), key=lambda x: x["published"], reverse=True
+    )[:count]
     return sorted_articles
-
 
 
 def article_by_id(article_id: int = None) -> db.Article | None:

@@ -97,9 +97,6 @@ def create_endpoints(app: Flask) -> None:
     @app.route("/user", methods=("GET",))
     @ensure_auth
     def auth_get(user: User):
-        """Get the current user."""
-        print("AUTH_GET")
-        print(user)
         return jsonify(user.to_dict()), 200
 
     @app.route("/user/delete", methods=("POST",))
@@ -394,7 +391,6 @@ def create_endpoints(app: Flask) -> None:
         if user.hard_ready >= 0:
             user.hard_train()
             recommendations = user.hard_recommend(count)
-            print(recommendations)
             for i in range(len(recommendations)):
                 if int(recommendations[i]) == 0:
                     recommendations = recommendations[:i]
@@ -466,7 +462,6 @@ def create_endpoints(app: Flask) -> None:
         """Return top `count` popular companies."""
         try:
             max_count = int(request.form["count"])
-            print(max_count)
         except (ValueError, KeyError):
             max_count = 10
 
