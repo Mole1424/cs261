@@ -5,7 +5,10 @@
   },
   "dependencies": {
     "axios": "^1.6.7",
+    "chart.js": "^4.4.1",
+    "chartjs-plugin-annotation": "^3.0.1",
     "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
@@ -25,7 +28,6 @@
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
-    "url-loader": "^4.1.1",
     "webpack": "^5.90.1",
     "webpack-cli": "^5.1.4"
   }

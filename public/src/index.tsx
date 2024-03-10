@@ -20,7 +20,7 @@ const root = createRoot(container);
 
   root.render(
     <StrictMode>
-        <App initialUser={userData} />
+      <App initialUser={userData} defaultTab={'Recent'} />
     </StrictMode>
   );
 })();

@@ -1,8 +1,10 @@
 __pycache__
 python
 .env
+env
 .idea
 node_modules
 public/dist
 server/__init__.pyc
 server/constants.pyc
+.vscode

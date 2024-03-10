@@ -1,0 +1,72 @@
+@use "variables" as V;
+
+.article-card {
+  padding: 5px;
+  background-color: V.$secondary-bg;
+  border: 1px solid V.$primary-fg;
+  border-radius: V.$card-border-radius;
+
+  display: grid;
+  grid-template-areas:
+          "title sentiment link"
+          "about . ."
+          "overview overview overview"
+          "related related .";
+  grid-template-columns: 70% 25% 5%;
+  grid-gap: 5px;
+
+  > * {
+    display: flex;
+  }
+
+  > .article-title {
+    grid-area: title;
+    font-size: 1.5em;
+    border-bottom: 1px solid V.$primary-fg;
+
+    justify-content: center;
+    align-items: center;
+  }
+
+  > .article-sentiment {
+    grid-area: sentiment;
+
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+  }
+
+  > .article-link {
+    grid-area: link;
+  }
+
+  > .article-about {
+    grid-area: about;
+    font-size: 0.9em;
+
+    justify-content: center;
+    align-items: center;
+  }
+
+  > .article-overview {
+    grid-area: overview;
+
+    align-items: center;
+    justify-content: left;
+    padding: 10px;
+  }
+
+  > .article-related {
+    grid-area: related;
+
+    display: flex;
+
+    > span {
+      padding-right: 5px;
+
+      &:not(:first-child):not(:last-child)::after {
+        content: " |";
+      }
+    }
+  }
+}

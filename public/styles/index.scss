@@ -1,8 +1,9 @@
-@use "variables.scss" as V;
+@use "variables" as V;
 
 html {
     width: 99vw;
     height: 99vh;
+    background-color: V.$primary-bg;
 }
 
 body {
@@ -20,6 +21,7 @@ body {
     font-family: V.$font-family;
     background-color: V.$primary-bg;
     color: V.$primary-fg;
+    overflow-x: hidden;
 }
 
 .error-card {
@@ -31,7 +33,8 @@ body {
 
 input,
 button,
-textarea {
+textarea,
+.btn {
     background-color: V.$primary-fg;
     color: V.$primary-bg;
     outline: none;
@@ -44,61 +47,125 @@ input::placeholder {
     font-family: V.$font-family;
 }
 
-button {
+button, .btn {
     background-color: V.$secondary-bg;
     color: V.$secondary-fg;
     padding: 7px;
-    border-radius: 10px;
-}
+    border-radius: V.$card-border-radius;
 
-button:hover {
-    cursor: default;
-    background-color: V.$primary-bg;
-}
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-button.btn-danger:hover {
-    background-color: V.$error-bg;
+    &:hover {
+        cursor: default;
+        background-color: V.$primary-bg;
+    }
+
+    &.btn-danger:hover {
+        background-color: V.$error-bg;
     color: V.$error-fg;
+    }
+}
+
+.link {
+    color: V.$primary-fg;
+    text-decoration: underline;
+
+    &:hover {
+        text-decoration: none;
+        cursor: default;
+    }
+}
+
+.icon:not(.no-style) {
+    filter: V.$filter-white;
+
+    &.style-red {
+        filter: V.$filter-red;
+    }
+
+    &.style-green {
+        filter: V.$filter-green;
+    }
 }
 
 // Page header
 header {
     height: V.$header-height;
     background-color: V.$secondary-bg;
-    border-bottom: 2px solid V.$secondary-fg;
+    //border-bottom: 2px solid V.$secondary-fg;
 
     // Header top section
     > div {
         height: 60%;
         width: 100%;
 
-        > span {
-            height: 100%;
-        }
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
 
         // App name
-        > :nth-child(1) {
-            padding-left: 10px;
-            font-size: 2em;
-            color: V.$primary-fg;
+        > div:first-child {
+            width: V.$filter-window-width;
             border-right: 1px solid V.$primary-fg;
+            color: V.$primary-fg;
+            padding-left: 5px;
+            font-size: 2em;
 
             display: flex;
             justify-content: left;
             align-items: center;
-
-            width: V.$filter-window-width;
         }
 
-        // Username
-        > :nth-child(2) {
-            border-right: 1px solid V.$primary-fg;
-            margin: 10px 0;
-        }
+        // Username/bell
+        > div:last-child {
+            display: flex;
+            margin-left: auto;
 
-        // Bell
-        > :nth-child(3) {
 
+            // Username
+            > :first-child {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                color: V.$primary-fg;
+                text-decoration: underline;
+
+                padding-right: 5px;
+                margin: 5px 0;
+                border-right: 1px solid V.$primary-fg;
+
+                &:hover {
+                    text-decoration: none;
+                    cursor: default;
+                }
+            }
+
+            // Notifications info
+            > .bell-container {
+                display: flex;
+
+                // Bell icon
+                > img {
+                    color: V.$primary-fg;
+                }
+
+                // Notification count
+                > span {
+                    color: V.$primary-fg;
+                    font-size: 0.9em;
+
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+
+                &[data-received="true"] {
+                    animation: pulse 1s infinite;
+                }
+            }
         }
     }
 
@@ -106,4 +173,18 @@ header {
     > nav {
         height: 40%;
     }
+}
+
+@keyframes pulse {
+  0% {
+    background-color: transparent;
+  }
+
+  50% {
+    background-color: V.$unread-notification-color;
+  }
+
+  100% {
+    background-color: transparent;
+  }
 }

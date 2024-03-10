@@ -1,85 +1,44 @@
-import {useState} from 'react';
-import Login, {requestLogout} from "./components/Login";
-import {IUserData} from "./interfaces/IUserData";
-import {APP_NAME} from "./index";
-import TabGroup, {ITab} from "./components/TabGroup";
+import React, {useEffect, useState} from 'react';
+import Login from "./components/Login";
+import {IUserData} from "./types/IUserData";
+import {ICbEvent, parseStringToEvent} from "./types/AppEvent";
+import Main from "./components/Main";
 
-export interface IAppProps {
-  initialUser?: IUserData | null;
+interface IProps {
+  initialUser?: IUserData | null,
+  defaultTab?: string; // Label of the default tab
 }
 
-export interface IAppState {
-  currentUser: IUserData | null;
-}
+export const App = ({ initialUser, defaultTab }: IProps) => {
+  const [user, setUser] = useState<IUserData | null>(initialUser ?? null);
+  const [event, setEvent] = useState<ICbEvent | null>(null);
 
-export default function App(props: IAppProps) {
-  const [state, setState] = useState<IAppState>({
-    currentUser: props.initialUser ?? null
-  });
+  // Load event from hash?
+  useEffect(() => {
+    const hash = location.hash.substring(1);
+    location.hash = "";
 
-  /** Click the 'logout' button */
-  const clickLogout = async () => {
-    if (await requestLogout()) {
-      setState({
-        currentUser: null
-      });
-    }
-  };
+    if (hash) {
+      const event = parseStringToEvent(hash);
 
-  /** Click the user's name */
-  const clickUserName = () => {
-    // TODO
-    console.log("Click user's name");
-    console.log(state.currentUser);
-  };
-
-  if (state.currentUser === null) {
-    return <Login onLoginSuccess={user => void setState({ currentUser: user })} />;
-  } else {
-    const tabs: ITab[] = [
-      {
-        label: 'Following'
-      },
-      {
-        label: 'For You'
-      },
-      {
-        label: 'Recent'
-      },
-      {
-        label: 'Popular'
-      },
-      {
-        label: 'Search'
-      },
-      {
-        label: 'Logout',
-        onClick: async () => {
-          await clickLogout();
-          return { select: false };
-        }
+      if (event) {
+        setEvent(event);
+      } else {
+        console.log(`Invalid hash: '${hash}'`);
       }
-    ];
+    }
+  }, []);
 
-    return (
-      <>
-        <header>
-          <div>
-            <span>
-              {APP_NAME}
-            </span>
-            <span onClick={clickUserName}>
-              {state.currentUser.name}
-            </span>
-            <span>
-              TODO: Bell
-            </span>
-          </div>
-          <TabGroup tabs={tabs} />
-        </header>
-        <h1>Welcome to {APP_NAME}, {state.currentUser.name}!</h1>
-        <p>This page is still under construction.</p>
-      </>
-    );
-  }
-}
+  return user
+    ? <Main
+      user={user}
+      onLogout={() => setUser(null)}
+      defaultTab={defaultTab}
+      initialEvent={event ?? undefined}
+    />
+    : <Login
+      onLoginSuccess={setUser}
+    />;
+};
+
+export default App;
