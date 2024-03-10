@@ -262,14 +262,14 @@ def search_companies(
             .first()
         )
         if not company:
-            result.append(add_company(symbol[1]))
+            add_company(symbol[1])
         elif (
             not db.db.session.query(db.Stock)
             .filter(db.Stock.symbol == symbol[1])
             .first()
         ):
             add_stock(symbol[1], company[0])
-    return result
+    return query.all()
 
 
 def add_company(symbol: str, get_news=False) -> db.Company | None:
