@@ -84,11 +84,11 @@ export const CompanyDetails = ({ companyId, eventCallback }: (IViewProps & IProp
         }
         <span className={'company-stock-change'}>
             {company.stockDelta == 0 ? '' : <img alt={'Stock trend icon'} src={company.stockDelta < 0 ? TrendDownIcon : TrendUpIcon} className={'icon style-' + (company.stockDelta < 0 ? 'red' : 'green')} />}
-            <span>{Math.abs(company.stockDelta).toFixed(1)}%</span>
+            <span>{Math.abs(company.stockDelta).toFixed(3)}%</span>
         </span>
         <span className={'company-sentiment'}>
           <img src={sentimentIcon} alt={company.sentimentCategory} className={'icon ' + sentimentIconClass} />
-          <span>{company.sentiment}</span>
+          <span>{Math.abs(company.sentiment).toFixed(3)}%</span>
         </span>
         <span className={'company-ceo'}>{company.ceo}</span>
         <img className={'company-logo'} alt={'Company logo'} src={logoUrl} onError={() => setLogoUrl(DefaultCompanyIcon)} />

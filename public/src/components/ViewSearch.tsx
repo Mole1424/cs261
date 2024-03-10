@@ -8,6 +8,7 @@ import {ILoadCompanyEvent} from "../types/AppEvent";
 import {requestSectors} from "./UserProfile";
 import {arrayRemove} from "../util";
 import ISector from "../types/ISector";
+import Loading from "assets/loading.svg";
 
 import "styles/view-search.scss";
 import PlusIcon from "assets/plus.svg";
@@ -16,19 +17,33 @@ import CrossIcon from "assets/cross.svg";
 export const ViewSearch = ({ eventCallback }: IViewProps) => {
   const [companies, setCompanies] = useState<ICompanyDetails[]>([]);
   const[sectors, setSectors] = useState<ISector[]>([]);
+  const [loading, setLoading] = useState(false); 
 
   /** Search for companies. */
-  const onSearch = (fields: ISearchOptions) => {
+const onSearch = (fields: ISearchOptions) => {
+  // Check if any search criteria have been entered
+  const hasSearchCriteria =
+    fields.ceo ||
+    fields.name ||
+    (fields.sectors && fields.sectors.length > 0) ||
+    (fields.sentimentRange && (fields.sentimentRange[0] !== -1 || fields.sentimentRange[1] !== 1)) ||
+    (fields.marketCap && (fields.marketCap[0] !== 0 || fields.marketCap[1] !== 0)) ||
+    (fields.stockPriceRange && (fields.stockPriceRange[0] !== 0 || fields.stockPriceRange[1] !== 0));
+
+  if (hasSearchCriteria) {
+    setLoading(true);
     console.log(fields); // ! DEBUG
     requestSearchCompanies(fields)
-      .then(response => {
+      .then((response) => {
         if (response) {
           setCompanies(response);
         } else {
           console.log("Failed to search for companies.");
         }
-      });
-  };
+      })
+      .finally(() => setLoading(false));
+  }
+};
 
   /** Click on a company card. */
   const clickCompanyCard = (companyId: number) =>
@@ -46,7 +61,7 @@ export const ViewSearch = ({ eventCallback }: IViewProps) => {
   }, []);
 
   return (
-    <main className={'content-search content-cards'}>
+    <div className={'content-search content-cards'}>
       <SearchOptions
         onChange={onSearch}
         sectors={sectors}
@@ -55,12 +70,25 @@ export const ViewSearch = ({ eventCallback }: IViewProps) => {
         initialStockPrice={1_000}
       />
 
-      <div className={'cards'}>
-        {companies.map(company =>
-          <CompanyCard key={company.id} company={company} onClick={clickCompanyCard} />
-        )}
-      </div>
-    </main>
+<div className={'cards'}>
+  {loading ? (
+    <img
+      src={Loading}
+      alt={"Loading"}
+      style={{ width: '4%', height: '4%', display: 'block', margin: 'auto' }}
+      className={`rotate-animation loading-icon`}
+    />
+  ) : (
+    companies.map((company) => (
+      <CompanyCard
+        key={company.id}
+        company={company}
+        onClick={clickCompanyCard}
+      />
+    ))
+  )}
+</div>
+</div>
   );
 };
 
