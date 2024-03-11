@@ -21,6 +21,10 @@ To build the front-end code, please run `npm run build`.
 To start the server, run `python main.py`. Include the flag `--debug` to run in debug mode.
 To stop the server, press `Ctrl+C`.
 
+## Database
+
+The database comes pre-loaded with the FTSE100 and S&P500 companies. Due to API limits, the database only contains 1 stock per company. These are then added to if you search the company on the website.
+
 ## Test Suite
 To run the default selection of tests use `python test.py`.
 
